@@ -1,0 +1,17 @@
+{
+    "HomePage": {
+      "title": "الصفحة الرئيسية"
+    },
+    "AboutPage": {
+        "title": "حول الصفحة"
+    },
+    "Buttons" : {
+      "explore" : "يستكشف",
+      "viewAll" : "عرض الكل",
+      "discoverMore" : "اكتشف المزيد",
+      "signUp": "اشتراك",
+      "download": "قم بالتنزيل الآن",
+      "learnmore": "يتعلم أكثر",
+      "loadMore": "تحميل المزيد"
+    }
+  }

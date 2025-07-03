@@ -1,0 +1,435 @@
+/* Custom Font Faces */
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: normal;
+  src:
+    url('/fonts/Montserrat-Regular.woff2') format('woff2'),
+    url('/fonts/Montserrat-Regular.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: normal;
+  src:
+    url('/fonts/Montserrat-Italic.woff2') format('woff2'),
+    url('/fonts/Montserrat-Italic.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  src:
+    url('/fonts/Montserrat-Medium.woff2') format('woff2'),
+    url('/fonts/Montserrat-Medium.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: 500;
+  src:
+    url('/fonts/Montserrat-MediumItalic.woff2') format('woff2'),
+    url('/fonts/Montserrat-MediumItalic.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 600;
+  src:
+    url('/fonts/Montserrat-SemiBold.woff2') format('woff2'),
+    url('/fonts/Montserrat-SemiBold.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: 600;
+  src:
+    url('/fonts/Montserrat-SemiBoldItalic.woff2') format('woff2'),
+    url('/fonts/Montserrat-SemiBoldItalic.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: bold;
+  src:
+    url('/fonts/Montserrat-Bold.woff2') format('woff2'),
+    url('/fonts/Montserrat-Bold.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: bold;
+  src:
+    url('/fonts/Montserrat-BoldItalic.woff2') format('woff2'),
+    url('/fonts/Montserrat-BoldItalic.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 900;
+  src:
+    url('/fonts/Montserrat-Black.woff2') format('woff2'),
+    url('/fonts/Montserrat-Black.woff') format('woff');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Noto Kufi Arabic';
+  font-style: normal;
+  font-weight: bold;
+  src: url('/fonts/NotoKufiArabic-Bold.woff2') format('woff2'),
+    url('/fonts/NotoKufiArabic-Bold.woff') format('woff');
+}
+
+@theme {
+  --color-primary: #022a3a;
+  --color-secondary: #f4cd00;
+  --color-yellow-f4: #f4ce13;
+  --color-gnorange: #e9a630;
+  --color-gray: #2b2b2b;
+  --color-gray-e0: #e0e0e0;
+  --color-gray-e2: #e2e2e2;
+  --color-gray-e4: #e4e4e4;
+  --color-gray-e5: #e5e5e5;
+  --color-gray-f6: #f6f6f6;
+  --color-gray-f0: #f0f0f0;
+  --color-gray-72: #727171;
+  --color-gray-ce: #cecece;
+  --color-gray-d9: #d9d9d9;
+  --color-white: #fff;
+  --color-black: #000;
+  --color-black-01: #012839;
+  --color-black-16: #162d3d;
+  --color-black-08: #08304b;
+  --color-black-03: #032a39;
+  --color-black-25: #254957;
+  --color-red: #f00;
+  --color-green-16: #16ab32;
+
+  --font-family-primary: 'Montserrat', sans-serif;
+  --font-family-arabic: 'Noto Kufi Arabic', sans-serif;
+
+  /* Font Weights */
+  --font-weight-900: 900;
+  --font-weight-800: 800;
+  --font-weight-700: 700;
+  --font-weight-600: 600;
+  --font-weight-500: 500;
+  --font-weight-400: 400;
+  --font-weight-300: 300;
+
+  /* Custom Breakpoints */
+  --breakpoint-xxlg: 1499px;
+  --breakpoint-xlg: 1439px;
+  --breakpoint-lg: 1340px;
+  --breakpoint-slg: 1280px;
+  --breakpoint-lp: 1199px;
+  --breakpoint-md: 1024px;
+  --breakpoint-sm: 991px;
+  --breakpoint-xs: 767px;
+  --breakpoint-mb: 575px;
+  --breakpoint-xmb: 574px;
+  --breakpoint-mmob: 530px;
+  --breakpoint-mob: 480px;
+  --breakpoint-xxsmb: 380px;
+  --breakpoint-xsmb: 374px;
+
+  /* Container Widths */
+  --size-wide-container: 1441px;
+
+  /* Transition */
+  --transition-duration-custom: 0.3s;
+
+  /* Container gutter variables */
+  --gutter-x: 1.5rem;
+  --gutter-y: 0;
+}
+
+/* Custom Typography Utilities */
+@layer utilities {
+  h1 {
+    font-size: 96px;
+    font-weight: 900;
+    line-height: 86px;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: 60px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  h3 {
+    font-size: 48px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  h4 {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  h5 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  h6 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .text-p-xlarge {
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  .text-p-large {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .text-p-medium {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .text-p-normal {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .text-p-small {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  /* Responsive Typography */
+  @media (max-width: 1024px) {
+    h1 {
+      font-size: 90px;
+    }
+
+    h2 {
+      font-size: 56px;
+    }
+
+    h3 {
+      font-size: 45px;
+    }
+
+    h4 {
+      font-size: 28px;
+    }
+
+    h5 {
+      font-size: 22px;
+    }
+
+    h6 {
+      font-size: 20px;
+    }
+
+    .text-p-xlarge {
+      font-size: 24px;
+    }
+
+    .text-p-large {
+      font-size: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 70px;
+      line-height: 76px;
+    }
+
+    h2 {
+      font-size: 50px;
+    }
+
+    h3 {
+      font-size: 38px;
+    }
+
+    h4 {
+      font-size: 22px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 38px;
+      line-height: 40px;
+    }
+
+    h2 {
+      font-size: 45px;
+    }
+
+    h3 {
+      font-size: 35px;
+    }
+
+    h4 {
+      font-size: 16px;
+    }
+
+    h5 {
+      font-size: 20px;
+    }
+
+    h6 {
+      font-size: 18px;
+    }
+
+    .text-p-xlarge {
+      font-size: 18px;
+    }
+
+    .text-p-large {
+      font-size: 18px;
+    }
+
+    .text-p-medium {
+      font-size: 16px;
+    }
+
+    .text-p-small {
+      font-size: 12px;
+    }
+  }
+}
+
+/* Custom Container Utilities */
+@layer utilities {
+
+  .container,
+  .container-fluid,
+  .container-lg,
+  .container-md,
+  .container-sm,
+  .container-xl,
+  .container-xxl {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1202px;
+    padding-left: calc(var(--gutter-x) * 0.5);
+    padding-right: calc(var(--gutter-x) * 0.5);
+    width: 100%;
+  }
+
+  /* Responsive container max-widths */
+  @media (max-width: 1200px) {
+
+    .container,
+    .container-fluid,
+    .container-lg,
+    .container-md,
+    .container-sm,
+    .container-xl,
+    .container-xxl {
+      max-width: 960px;
+    }
+  }
+
+  @media (max-width: 768px) {
+
+    .container,
+    .container-fluid,
+    .container-lg,
+    .container-md,
+    .container-sm,
+    .container-xl,
+    .container-xxl {
+      max-width: 720px;
+    }
+  }
+
+  @media (max-width: 480px) {
+
+    .container,
+    .container-fluid,
+    .container-lg,
+    .container-md,
+    .container-sm,
+    .container-xl,
+    .container-xxl {
+      max-width: 540px;
+    }
+  }
+
+  @media (max-width: 576px) {
+
+    .container,
+    .container-fluid,
+    .container-lg,
+    .container-md,
+    .container-sm,
+    .container-xl,
+    .container-xxl {
+      max-width: 100%;
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+  }
+
+  /* Alternative: Tailwind-style container utility */
+  .tw-container {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1202px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    width: 100%;
+  }
+
+  @media (max-width: 1200px) {
+    .tw-container {
+      max-width: 960px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tw-container {
+      max-width: 720px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .tw-container {
+      max-width: 540px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .tw-container {
+      max-width: 100%;
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+  }
+}

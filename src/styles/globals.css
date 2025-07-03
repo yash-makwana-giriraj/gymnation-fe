@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "./theme.css";
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
+
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.location-card-slider .swiper-button-next {}

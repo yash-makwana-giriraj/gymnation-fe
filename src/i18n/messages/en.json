@@ -1,0 +1,17 @@
+{
+    "HomePage": {
+      "title": "Home page"
+    },
+    "AboutPage": {
+      "title": "About page"
+    },
+    "Buttons" : {
+      "explore" : "Explore",
+      "viewAll" : "View All",
+      "discoverMore" : "Discover more",
+      "signUp": "Sign Up",
+      "download": "Download Now",
+      "learnmore": "Learn more",
+      "loadMore": "Load More"
+    }
+  }
