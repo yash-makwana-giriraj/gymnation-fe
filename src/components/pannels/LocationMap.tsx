@@ -537,7 +537,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
             </div>
           </div>
           <div className="relative w-full !h-[530px] mb:!h-[703px] xs:!h-[325px] sm:!h-[530px] xs:bg-primary xs:px-[35px] xs:pb-[45px] sm:p-[0] sm:bg-white">
-            <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
+            {/* <MapBoxMap ref={mapRef} apiLocations={filteredLocations} /> */}
           </div>
         </div>
       </div>
