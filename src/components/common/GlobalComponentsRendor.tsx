@@ -58,9 +58,9 @@ const ImageGalleryWithDescription = dynamic(
   { ssr: true }
 );
 
-// const LocationMap = dynamic(() => import("@/components/pannels/LocationMap"), {
-//   ssr: true,
-// });
+const LocationMap = dynamic(() => import("@/components/pannels/LocationMap"), {
+  ssr: true,
+});
 
 const informationSection = dynamic(() => import("@/components/pannels/Description"), {
   ssr: true,
@@ -85,7 +85,7 @@ const components: Record<string, ComponentType<DynamicComponentProps>> = {
   ScrollableClassesCard,
   ImageGalleryWithDescription,
   informationSection,
-  // LocationMap,
+  LocationMap,
   NewLocationMap
 };
 
