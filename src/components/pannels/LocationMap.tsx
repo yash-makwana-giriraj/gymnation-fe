@@ -16,7 +16,7 @@ import AutocompleteInput from "../ui/AutocompleteInput";
 import LocationFilterCard from "../cards/LocationFilterCard";
 import LocationDetailCard from "../cards/LocationDetailCard";
 
-import MapBoxMap, { MapBoxRef } from "../map/MapBoxMap";
+import  { MapBoxRef } from "../map/MapBoxMap";
 
 // Helpers
 import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
