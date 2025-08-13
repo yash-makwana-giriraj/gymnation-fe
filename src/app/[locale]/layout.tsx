@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import { fetchContent } from "@/api-handler/apis/content";
 import { FooterData, HeaderData } from "@/interfaces/content";
 import Header from "@/components/layout/Header";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const iBMPlexSans = IBM_Plex_Sans({
   weight: ["300", "400", "500"],
@@ -78,6 +79,7 @@ export default async function RootLayout({
             <Footer data={footerData} />
           </ReduxProvider>
         </NextIntlClientProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
