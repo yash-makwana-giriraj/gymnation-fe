@@ -1,11 +1,12 @@
 import { fetchContent } from "@/api-handler/apis/content";
-import { SeoSitemapConfig } from "@/interfaces/content";
+import { RendorProps, SeoSitemapConfig } from "@/interfaces/content";
 import { renderContent } from "@/services/renderContent";
 
 // Generate metadata for SEO
-export async function generateMetadata() {
-
-  const apiData = await fetchContent();
+export async function generateMetadata({ params }: RendorProps) {
+  const { slug } = await params;
+  const formattedSlug = slug.join('/')
+  const apiData = await fetchContent(formattedSlug);
 
   const seoConfig: SeoSitemapConfig = {
     seoTitle: apiData?.properties?.seoTitle || "OQ8",
@@ -38,6 +39,8 @@ export async function generateMetadata() {
   };
 }
 
-export default async function DynamicRender() {
-  return await renderContent();
+export default async function DynamicRender({ params }: RendorProps) {
+  const { slug } = await params;
+  const formattedSlug = slug.join('/')
+  return await renderContent(formattedSlug);
 }

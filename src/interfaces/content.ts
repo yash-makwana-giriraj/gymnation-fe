@@ -54,16 +54,16 @@ export interface DynamicComponentData {
   iconTItle: string;
   largeContainer: boolean;
   content: {
-    items: OverviewItem[]
-  }
+    items: OverviewItem[];
+  };
   documents: DocsData[];
   ctaLink: string;
   cardItems: {
     items: Item[];
-  }
-
-
-
+  };
+  scrollableCardItems: {
+    items: Item[];
+  };
   heroImage: MediaImage[];
   heroTitle: string;
   heroHeading: string;
@@ -74,7 +74,36 @@ export interface DynamicComponentData {
   redictToAction: Link[];
   locationItems: {
     items: Item[];
-  }
+  };
+  largeText: {
+    markup: string;
+  };
+  videoUrl: string;
+}
+
+export interface GoogleReview {
+  id: string;
+  reviewId: string;
+  reviewerProfilePhotoUrl: string;
+  reviewerDisplayName: string;
+  starRating: string;
+  createTime: string;
+  updateTime: string;
+  name: string;
+  comment: string;
+  reviewReplyComment: string;
+  reviewReplyupdateTime: string;
+}
+
+export interface GymReview {
+  id: number;
+  location: string;
+  placeId: string;
+  formattedAddress: string;
+  ratings: number;
+  totalReviews: number;
+  updatedDate: string;
+  createdDate: string;
 }
 
 export interface DocsData {
@@ -111,7 +140,7 @@ export interface ItemContent {
     };
     items: {
       items: OverviewItem[];
-    }
+    };
   };
 }
 
@@ -127,12 +156,13 @@ export interface imageData {
 export interface ItemData {
   content: {
     properties: accordionItem;
-  }
+  };
 }
 
 export interface accordionItem {
   title: string;
   subTitle?: string;
+  image?: MediaImage[];
   description: {
     markup: string;
   };
@@ -143,17 +173,6 @@ export interface GlobalComponentProps {
       content?: {
         items: ContentItem[];
       };
-      hideInSitemap: boolean;
-      sitemapChangeFrequency: string | null;
-      sitemapPriority: number;
-      seoTitle: string | null;
-      seoDescription: string | null;
-      seoKeywords: string | null;
-      canonicalUrl: string | null;
-      noIndex: boolean;
-      ogTitle: string | null;
-      ogDescription: string | null;
-      ogImage: string | null;
       headerTheme: string;
     };
   };
@@ -173,30 +192,266 @@ export interface ContentResponse {
     };
   };
   id: string;
-  properties: {
-    hideInSitemap: boolean;
-    sitemapChangeFrequency: string | null;
-    sitemapPriority: number;
-    seoTitle: string | null;
-    seoDescription: string | null;
-    seoKeywords: string | null;
-    canonicalUrl: string | null;
-    noIndex: boolean;
-    ogTitle: string | null;
-    ogDescription: string | null;
-    ogImage: string | null;
-    internalRouting: string | null;
-    externalRouting: string | null;
-    hideFromInternalSearch: boolean;
-    headerTheme: string;
-    content: {
-      items: ContentItem[];
-    };
-  };
+  properties: Properties;
   cultures: Record<
     string,
     { path: string; startItem: { id: string; path: string } }
   >;
+  content: {
+    properties: Properties;
+  };
+}
+
+export interface Properties {
+  navigation?: {
+    items: MenuItem[]
+  }
+  formTitle?: string
+  logo: MediaItem[];
+  sitemapChangeFrequency: string | null;
+  sitemapPriority: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  seoKeywords: string | null;
+  canonicalUrl: string | null;
+  noIndex: boolean;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImage: string | null;
+  internalRouting: string | null;
+  externalRouting: string | null;
+  hideFromInternalSearch: boolean;
+  hideInSitemap: boolean;
+  headerTheme: string;
+  content: {
+    items: ContentItem[];
+  };
+  footerNavigationSections: footerNavigationSections;
+  footerLink: Link[];
+  footerImage: MediaItem[];
+  footerDescription: string;
+  footerLogo?: MediaItem[];
+  footerNavigation?: {
+    items: FooterItem[];
+  };
+  partnerText?: string;
+  copyrightText?: RichTextDescription;
+  socialAccounts?: {
+    items: SocialMediaItem[];
+  };
+  socialMediaTitle: string;
+  appTitle: string;
+  appStoreImage: MediaItem[];
+  appStoreHoverImage: MediaItem[];
+  appStoreLink: string;
+  playStoreHoverImage: MediaItem[];
+  playStoreImage: MediaItem[];
+  playStoreLink: string;
+  sectionTitle: string;
+  sectionLinks: Link[];
+  description: RichTextDescription | string;
+  title?: string;
+  icon?: MediaImage[];
+  statistics?: string;
+  year?: string;
+  curved?: string;
+  image?: MediaImage[];
+  cardLink: Link[];
+  name?: string;
+  link: Link[];
+  callToAction?: Link[];
+  flagIcon: MediaImage[];
+  countryName: string;
+  cityList: CardItems;
+  cityName: string;
+  languageCode: string;
+  cityLocations: {
+    items: CityItem[];
+  };
+  countries: CardItems;
+  aPILocations: APILocationsResponse[];
+  locations: LinkItem[];
+  locationName: string;
+  catagoryLocations: APILocationsResponse[];
+  locationLatitude: string;
+  locationLongitude: string;
+  placeId?: string;
+  mapAddress: string;
+  mapDirectionUrl?: string;
+  mapImage: MediaImage[];
+  noFollow: boolean;
+  excludeFromSiteSearch: boolean;
+  excludeFromMenu: boolean;
+  showLanguageSwitcher: boolean;
+  noOpener: boolean;
+  isNewLayout: boolean;
+  noFollowExternalLink: boolean;
+  markupClass: string | null;
+  scripts: string | null;
+  enableSalesforce: boolean;
+  enableHubSpot: boolean;
+  salesforceLeadSource: string;
+  salesforceLeadSubCategory: string;
+  salesforceSiteLocation: string | null;
+  salesforceReturnUrl: string | null;
+  enabledCustomSuccessMessage: boolean;
+  salesforceSuccessMessage: string | null;
+  salesforceReferLink: string | null;
+  leadLocations: LeadLocation[];
+  referTitle: string | null;
+  referLink: string | null;
+  whatsappLabelText: string | null;
+  emailLabelText: string | null;
+  shareViaLabelText: string | null;
+  referEmailSubject: string | null;
+  customEmailMessage: string | null;
+  customWhatsappMessage: string | null;
+  isComingSoon: boolean;
+  mapWidget: string;
+  defaultCountryCode: string;
+  currency: string;
+  telrCurrency: string;
+  tELRStoreID: string;
+  tELRAuthorisationKey: string;
+  telrRemoteApiAuthKey: string;
+  paymentRepeatStartDate: string;
+  applePayAuthKey: string;
+  isKSA: boolean;
+  mapPinText: string;
+  polygonCoordinates: null;
+  pfgclubId: string;
+  isPreSell: boolean;
+  prePostOfferText: string | null;
+  prePostUserText: string | null;
+  timeForProcess: string | null;
+  prePostTimeText: string | null;
+  higherNumber: number | null;
+  minCheckoutUserNumber: number | null;
+  userTextForMobile: string | null;
+  bottomNumber: number | null;
+  enableDayPass: boolean;
+  mAPCTA: LinkItem[];
+  featureLink: string | null;
+  leadTitle: string;
+  category: string;
+}
+
+export interface APILocationsResponse {
+  contentType: string;
+  name: string;
+  createDate: string;
+  updateDate: string;
+  route: Route;
+  id: string;
+  properties: Properties;
+  sys: {
+    id: string;
+  }
+}
+
+export interface Route {
+  path: string;
+  startItem: {
+    id: string;
+    path: string;
+  };
+}
+
+export interface ContentBlocks {
+  items: ContentBlockItem[];
+}
+
+export interface ContentBlockItem {
+  content: ContentItem;
+  settings: ContentSettings | null;
+}
+
+export interface ContentItem {
+  contentType: string;
+  id: string;
+}
+
+export interface ContentSettings {
+  contentType: string;
+  id: string;
+  properties: {
+    customClass: string | null;
+    customCSSClass: string | null;
+    sectionClass: string | null;
+  };
+}
+
+export interface LinkItem {
+  url: string | null;
+  queryString: string | null;
+  title: string;
+  target: string | null;
+  destinationId: string;
+  destinationType: string;
+  route: Route;
+  linkType: string;
+}
+
+export interface SearchLocationItem {
+  features: FeaturesItem[]
+}
+
+export interface FeaturesItem {
+  place_name: string
+}
+
+export interface LeadLocation {
+  contentType: string;
+  name: string;
+  createDate: string;
+  updateDate: string;
+  route: Route;
+  id: string;
+}
+
+
+export interface CityItem {
+  content: {
+    id: string;
+    contentType: string;
+    properties: {
+      cityName: string;
+      arabicCityName: string | null;
+      countryLanguageCode: string;
+      locations: {
+        items: LocationItem[];
+      };
+    };
+  };
+  settings: null;
+}
+
+export interface LocationItem {
+  content: {
+    properties: {
+      displayName: string;
+      sFName?: string;
+    };
+  };
+  settings: null;
+}
+
+export interface footerNavigationSections {
+  items: ContentResponse[];
+}
+
+export interface GoogleReviewResponse {
+  id: string;
+  reviewId: string;
+  reviewerProfilePhotoUrl: string;
+  reviewerDisplayName: string;
+  starRating: string;
+  createTime: string;
+  updateTime: string;
+  name: string;
+  comment: string;
+  reviewReplyComment: string;
+  reviewReplyupdateTime: string;
 }
 
 // Global Config content
@@ -240,12 +495,31 @@ export interface GlobalConfigResponse {
 }
 
 export interface MenuItem {
+  title: string;
   content: {
     contentType: "menuItem";
     id: string;
     properties: {
       menuLink: Link[];
       subMenuLink: Link[] | null;
+      hasChildren?: boolean;
+      hasTreeMenu?: boolean;
+      cityTitle: string;
+      link?: Link[];
+      route?: {
+        path: string;
+        title: string;
+      };
+      title: string;
+      image: MediaImage[];
+      cityList: {
+        items: MenuItem[];
+      };
+      childItems: {
+        items: MenuItem[];
+      };
+      selectRegion: string;
+      selectRegions: MenuItem[];
     };
   };
   settings: null;
@@ -256,12 +530,8 @@ export interface FooterItem {
     contentType: "footerItem" | "footerInformation";
     id: string;
     properties: {
-      links?: Link[];
-      heading?: string | null;
-      description: {
-        markup: string;
-        blocks: null;
-      };
+      sectionLinks?: Link[];
+      sectionTitle?: string | null;
     };
   };
   settings: null;
@@ -284,6 +554,8 @@ export interface SocialMediaItem {
     contentType: "imageWithLink";
     id: string;
     properties: {
+      icon: MediaImage[];
+      iconBlue: MediaImage[];
       socialMedia: string;
       link: Link[];
     };
@@ -296,23 +568,41 @@ export interface HeaderWrapperProps {
 }
 
 export interface HeaderData {
-  primaryLogo?: MediaItem[];
-  secondaryLogo?: MediaItem[];
-  navigationMenu?: {
-    items: MenuItem[];
+  logo?: MediaItem[];
+  navigation?: {
+    items: MenuItem[]
+  }
+  socialAccounts?: {
+    items: SocialMediaItem[];
   };
+  socialMediaTitle?: string;
+  appTitle?: string;
+  appStoreImage?: MediaItem[];
+  playStoreImage?: MediaItem[];
+  appStoreHoverImage?: MediaItem[];
+  playStoreHoverImage?: MediaItem[];
+  formTitle?: string;
 }
 
 export interface FooterData {
   footerLogo?: MediaItem[];
-  footerDescription?: string;
-  footerNavigation?: {
-    items: FooterItem[];
-  };
-  copyrightText?: string;
-  footerSocialMedia?: {
+  partnerText?: string;
+  copyrightText?: RichTextDescription;
+  socialAccounts?: {
     items: SocialMediaItem[];
   };
+  footerNavigationSections?: footerNavigationSections;
+  footerLink?: Link[];
+  footerImage?: MediaItem[];
+  footerDescription?: string;
+  socialMediaTitle?: string;
+  appTitle?: string;
+  appStoreImage?: MediaItem[];
+  appStoreHoverImage?: MediaItem[];
+  appStoreLink?: string;
+  playStoreHoverImage?: MediaItem[];
+  playStoreImage?: MediaItem[];
+  playStoreLink?: string;
 }
 
 export interface PageProps {
@@ -336,14 +626,14 @@ export interface RendorProps {
 // Global
 export interface MediaImage {
   focalPoint: null;
-  crops: null;
+  crops: null | never[];
   id: string;
   name: string;
   mediaType: "Image";
   url: string;
   extension: string;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   bytes: number;
   properties: Record<string, null>;
 }
@@ -388,36 +678,35 @@ export interface RichTextDescription {
   blocks: null;
 }
 
-export interface Properties {
-  backgroundImage: MediaImage[];
-  heading: string;
-  description: RichTextDescription | string;
-  isTransparent: boolean;
-  title?: string;
-  icon?: MediaImage[];
-  statistics?: string;
-  year?: string;
-  curved?: string;
-  image?: MediaImage[];
-  tagLine: string;
-  teamMembers: {
-    name: string;
-  }[];
-
-
-  name: string;
-  link: Link[];
-}
-
 export interface Content {
   contentType: string;
   id: string;
+  name: string;
   properties: Properties;
+  route: {
+    path: string;
+    startItem: {
+      id: string;
+      path: string;
+    };
+  };
+  createDate: string;
+  updateDate: string;
+  sys: {
+    id: string;
+  }
 }
 
-export interface Item {
+export interface MapBoxProps {
+  apiLocations: Content[];
+}
+
+export interface locationContent {
   content: Content;
   settings: null;
+}
+
+export interface Item extends locationContent {
   name: string;
   id: string;
 }
@@ -426,15 +715,13 @@ export interface CardItems {
   items: Item[];
 }
 
-export interface InitiativeContent {
-  properties: {
-    description: string;
-  };
+export interface CityLocationFilterItems {
+  items: ContentResponse[];
+  total: number;
 }
 
 // SEO
 export interface SeoSitemapConfig {
-  hideInSitemap: boolean;
   sitemapChangeFrequency: string | null;
   sitemapPriority: number;
   seoTitle: string | null;
@@ -445,4 +732,5 @@ export interface SeoSitemapConfig {
   ogTitle: string | null;
   ogDescription: string | null;
   ogImage: string | null;
+  hideInSitemap: boolean;
 }

@@ -9,7 +9,8 @@ export interface ErrorResponse {
   errors?: string[];
   [key: string]: unknown;
 }
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "yellow" | "white" | "tangaroa";
   disabled?: boolean;
   circleButton?: boolean;
@@ -23,6 +24,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export interface InputProps {
   placeholder?: string;
   disabled?: boolean;
+  varient?: "search" | "trial";
   leftIcon?: string;
   rightIcon?: string;
   className?: string;
@@ -45,6 +47,7 @@ export interface SelectBoxProps {
   options: Option[];
   value?: string;
   placeholder?: string;
+  varient?: "trail"
   onChange: (value: string) => void;
   disabled?: boolean;
   className?: string;
@@ -575,4 +578,12 @@ export interface SponsorshipFormPanelProps {
     heading?: string;
     description?: string;
   };
+}
+
+export interface sliderImageData {
+  image: string;
+}
+
+export interface scrollableCardsProps {
+  sliderCards: sliderImageData[];
 }
