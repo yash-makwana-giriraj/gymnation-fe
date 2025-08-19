@@ -64,7 +64,7 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
       <div
         ref={mapContainerRef}
         id="map"
-
+        style={{ minHeight: '100%' }}
       />
     );
   }
