@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } from "react";
-import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
+import { debounce, findNearestLocation } from "@/helpers/getCookie";
 
 // Lazy load heavy components
 const MapBoxMap = lazy(() => import("../map/MapBoxMap"));
@@ -14,7 +14,7 @@ import Image from "next/image";
 import LocationSelectBox from "../ui/LocationSelectBox";
 import AutocompleteInput from "../ui/AutocompleteInput";
 import LocationFilterCard from "../cards/LocationFilterCard";
-import LocationDetailCard from "../cards/LocationDetailCard";
+// import LocationDetailCard from "../cards/LocationDetailCard";
 import { MapBoxRef } from "../map/MapBoxMap";
 
 // Types
@@ -45,7 +45,7 @@ const MemoizedButton = React.memo(Button);
 const MemoizedLocationSelectBox = React.memo(LocationSelectBox);
 const MemoizedAutoCompleteInput = React.memo(AutocompleteInput);
 const MemoizedLocationFilterCard = React.memo(LocationFilterCard);
-const MemoizedLocationDetailCard = React.memo(LocationDetailCard);
+// const MemoizedLocationDetailCard = React.memo(LocationDetailCard);
 
 const LocationMap = ({ }: { data: DynamicComponentData }) => {
   // Core state
@@ -57,7 +57,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   const [activeTab, setActiveTab] = useState<number | undefined>(undefined);
   const [isSelectBoxVisible, setSelectionBoxVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
-  const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
+  // const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
 
   // Search state
   const [query, setQuery] = useState<string>("");
@@ -74,7 +74,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   const [isNoMatchLocations, setIsNoMatchLocations] = useState<boolean>(false);
 
   // Map state
-  const [activeCard, setActiveCard] = useState<number | null>(null);
+  // const [activeCard, setActiveCard] = useState<number | null>(null);
   const [lastLocation, setLastLocation] = useState<LocationCoordinates | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
@@ -245,23 +245,23 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     setFilterModalOpen(false);
   }, []);
 
-  const onCardClick = useCallback((index: number) => {
-    if (!isMapReady) return;
+  // const onCardClick = useCallback((index: number) => {
+  //   if (!isMapReady) return;
 
-    setActiveCard(index);
-    const location = filteredLocations[index];
-    if (!location) return;
+  //   setActiveCard(index);
+  //   const location = filteredLocations[index];
+  //   if (!location) return;
 
-    const lat = parseFloat(location.properties.locationLatitude ?? "");
-    const lng = parseFloat(location.properties.locationLongitude ?? "");
+  //   const lat = parseFloat(location.properties.locationLatitude ?? "");
+  //   const lng = parseFloat(location.properties.locationLongitude ?? "");
 
-    if (!isNaN(lat) && !isNaN(lng)) {
-      // Use RAF for smooth interaction
-      requestAnimationFrame(() => {
-        mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
-      });
-    }
-  }, [filteredLocations, isMapReady]);
+  //   if (!isNaN(lat) && !isNaN(lng)) {
+  //     // Use RAF for smooth interaction
+  //     requestAnimationFrame(() => {
+  //       mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
+  //     });
+  //   }
+  // }, [filteredLocations, isMapReady]);
 
   // const handleSwiperSlideChange = useCallback((swiper: any) => {
   //   if (!isMapReady) return;
@@ -294,8 +294,8 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
         setLoading(true);
 
         // Set RTL immediately
-        const lang = getCookieValue("NEXT_LOCALE");
-        setIsRTL(lang === "ar" ? "rtl" : "ltr");
+        // const lang = getCookieValue("NEXT_LOCALE");
+        // setIsRTL(lang === "ar" ? "rtl" : "ltr");
 
         // Load data in parallel with timeout
         const dataPromises = [
