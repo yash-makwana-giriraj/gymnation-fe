@@ -16,7 +16,7 @@ import AutocompleteInput from "../ui/AutocompleteInput";
 import LocationFilterCard from "../cards/LocationFilterCard";
 import LocationDetailCard from "../cards/LocationDetailCard";
 
-import { MapBoxRef } from "../map/MapBoxMap";
+import MapBoxMap, { MapBoxRef } from "../map/MapBoxMap";
 
 // Helpers
 import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
@@ -537,7 +537,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
             </div>
           </div>
           <div className="relative w-full !h-[530px] mb:!h-[703px] xs:!h-[325px] sm:!h-[530px] xs:bg-primary xs:px-[35px] xs:pb-[45px] sm:p-[0] sm:bg-white">
-            {/* <MapBoxMap ref={mapRef} apiLocations={filteredLocations} /> */}
+            <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
           </div>
         </div>
       </div>
