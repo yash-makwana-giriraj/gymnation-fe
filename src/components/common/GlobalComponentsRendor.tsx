@@ -26,10 +26,10 @@ const LargeTextComponent = dynamic(
   () => import("@/components/pannels/LargeTextComponent"),
   { ssr: true }
 );
-const WelcomeBlock = dynamic(
-  () => import("@/components/pannels/WelcomeBlock"),
-  { ssr: true }
-);
+// const WelcomeBlock = dynamic(
+//   () => import("@/components/pannels/WelcomeBlock"),
+//   { ssr: true }
+// );
 const Rewards = dynamic(() => import("@/components/sliders/Rewards"), {
   ssr: true,
 });
@@ -76,7 +76,7 @@ const components: Record<string, ComponentType<DynamicComponentProps>> = {
   aboutUsHero,
   LocationCard,
   LargeTextComponent,
-  WelcomeBlock,
+  // WelcomeBlock,
   Rewards,
   FeaturedCard,
   dayPassForm,
