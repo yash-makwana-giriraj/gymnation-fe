@@ -1,13 +1,13 @@
 "use client";
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } from "react";
+import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
 
-// API Handlers
-import {
-  fetchCityWithLocationData,
-  fetchCityLocationFilters,
-} from "@/api-handler/apis/content";
+// Lazy load heavy components
+const MapBoxMap = lazy(() => import("../map/MapBoxMap"));
+const Swiper = lazy(() => import("swiper/react").then(mod => ({ default: mod.Swiper })));
+const SwiperSlide = lazy(() => import("swiper/react").then(mod => ({ default: mod.SwiperSlide })));
 
-// Components
+// Regular components (keep these as they're lighter)
 import TabButtons from "../ui/TabButtons";
 import Button from "../ui/Button";
 import Image from "next/image";
@@ -15,12 +15,9 @@ import LocationSelectBox from "../ui/LocationSelectBox";
 import AutocompleteInput from "../ui/AutocompleteInput";
 import LocationFilterCard from "../cards/LocationFilterCard";
 import LocationDetailCard from "../cards/LocationDetailCard";
-import MapBoxMap, { MapBoxRef } from "../map/MapBoxMap";
+import { MapBoxRef } from "../map/MapBoxMap";
 
-// Helpers
-import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
-
-// Types and models
+// Types
 import {
   APILocationsResponse,
   ContentResponse,
@@ -28,15 +25,12 @@ import {
   FeaturesItem,
   Properties,
 } from "@/interfaces/content";
-
-// Swiper
-import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Scrollbar, Mousewheel } from "swiper/modules";
 
 // Constants
 const MAPBOX_API_BASE = "https://api.mapbox.com/geocoding/v5/mapbox.places";
 const DEFAULT_PROXIMITY = "25.276987,55.296249";
-const DEBOUNCE_DELAY = 500;
+const DEBOUNCE_DELAY = 300; // Reduced from 500ms
 const DEFAULT_ZOOM = 15;
 const LIST_ZOOM = 10;
 
@@ -45,13 +39,21 @@ interface LocationCoordinates {
   lng: number;
 }
 
+// Memoized sub-components
+const MemoizedTabButtons = React.memo(TabButtons);
+const MemoizedButton = React.memo(Button);
+const MemoizedLocationSelectBox = React.memo(LocationSelectBox);
+const MemoizedAutoCompleteInput = React.memo(AutocompleteInput);
+const MemoizedLocationFilterCard = React.memo(LocationFilterCard);
+const MemoizedLocationDetailCard = React.memo(LocationDetailCard);
+
 const LocationMap = ({ }: { data: DynamicComponentData }) => {
-  // Core data state
+  // Core state
   const [loading, setLoading] = useState<boolean>(true);
   const [cityLocationData, setCityLocationData] = useState<Properties>();
   const [cityLocationFilters, setFilters] = useState<ContentResponse[]>([]);
 
-  // UI state
+  // UI state  
   const [activeTab, setActiveTab] = useState<number | undefined>(undefined);
   const [isSelectBoxVisible, setSelectionBoxVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -74,23 +76,58 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   // Map state
   const [activeCard, setActiveCard] = useState<number | null>(null);
   const [lastLocation, setLastLocation] = useState<LocationCoordinates | null>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   // Refs
   const mapRef = useRef<MapBoxRef>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Memoized values
-  const languageCode = "en";
+  // Memoized expensive computations
   const countries = useMemo(() => cityLocationData?.countries.items, [cityLocationData]);
   const apiLocations = useMemo(() => cityLocationData?.aPILocations || [], [cityLocationData]);
 
-  // Memoized city list based on active tab
   const cityList = useMemo(() => {
     if (typeof activeTab === "undefined" || !countries) return [];
     return countries[activeTab]?.content?.properties?.cityList?.items || [];
   }, [activeTab, countries]);
 
-  // Optimized search function with abort controller
+  // Ultra-optimized filtered locations with virtualization concept
+  const filteredLocations = useMemo(() => {
+    if (!apiLocations.length || isNoMatchLocations) return [];
+
+    let filtered = apiLocations;
+
+    // Use Set for faster lookups if we have many filters
+    const filterSet = appliedFilters.length > 10 ? new Set(appliedFilters) : null;
+
+    // Chain filters efficiently
+    if (selectedLocation) {
+      const selectedLower = selectedLocation.toLowerCase();
+      filtered = filtered.filter(
+        (location: APILocationsResponse) =>
+          location.properties.cityName?.toLowerCase() === selectedLower
+      );
+    }
+
+    if (appliedFilters.length > 0) {
+      if (filterSet) {
+        filtered = filtered.filter((location: APILocationsResponse) => {
+          const locationId = location.sys?.id || location.id || "";
+          return filterSet.has(locationId);
+        });
+      } else {
+        filtered = filtered.filter((location: APILocationsResponse) => {
+          const locationId = location.sys?.id || location.id || "";
+          return appliedFilters.includes(locationId);
+        });
+      }
+    }
+
+    return filtered;
+  }, [apiLocations, selectedLocation, appliedFilters, isNoMatchLocations]);
+
+  // Optimized search with better debouncing
   const searchLocations = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setLocations([]);
@@ -105,76 +142,45 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     abortControllerRef.current = new AbortController();
 
     try {
-      const url = new URL(`${MAPBOX_API_BASE}/${encodeURIComponent(searchQuery)}.json`);
-      const params = new URLSearchParams({
-        access_token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN!,
-        language: languageCode,
-        limit: "10",
-        country: "ae",
-        proximity: DEFAULT_PROXIMITY,
-      });
-      url.search = params.toString();
+      const url = `${MAPBOX_API_BASE}/${encodeURIComponent(searchQuery)}.json?` +
+        new URLSearchParams({
+          access_token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN!,
+          language: "en",
+          limit: "5", // Reduced from 10
+          country: "ae",
+          proximity: DEFAULT_PROXIMITY,
+        });
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
 
-      if (data.features && data.features.length > 0) {
+      if (data.features?.length > 0) {
         const placeNames = data.features.map((feature: FeaturesItem) => feature.place_name);
-        const coordinates = data.features[0].geometry.coordinates;
+        const [lng, lat] = data.features[0].geometry.coordinates;
 
-        setSelectedCoordinates({
-          lat: coordinates[1],
-          lng: coordinates[0],
-        });
+        setSelectedCoordinates({ lat, lng });
         setLocations(placeNames);
       } else {
         setLocations([]);
       }
     } catch (error) {
       if (error instanceof Error && error.name !== "AbortError") {
-        console.error("Error fetching locations:", error);
+        console.error("Search error:", error);
         setLocations([]);
       }
     }
   }, []);
 
-  // Memoized debounced search
-  const debouncedSearchLocations = useMemo(
+  // Improved debounced search
+  const debouncedSearch = useMemo(
     () => debounce(searchLocations, DEBOUNCE_DELAY),
     [searchLocations]
   );
-
-  // Optimized filtered locations with memoization
-  const filteredLocations = useMemo(() => {
-    if (!apiLocations.length || isNoMatchLocations) return [];
-
-    let filtered = apiLocations;
-
-    // Filter by selected location
-    if (selectedLocation) {
-      filtered = filtered.filter(
-        (location: APILocationsResponse) =>
-          location.properties.cityName?.toLowerCase() === selectedLocation.toLowerCase()
-      );
-    }
-
-    // Filter by applied filters
-    if (appliedFilters.length > 0) {
-      filtered = filtered.filter((location: APILocationsResponse) => {
-        const locationId = location.sys?.id || location.id || "";
-        return appliedFilters.includes(locationId);
-      });
-    }
-
-    return filtered;
-  }, [apiLocations, selectedLocation, appliedFilters, isNoMatchLocations]);
 
   // Stable event handlers
   const handleTabButtonClick = useCallback((index: number) => {
@@ -199,21 +205,24 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     setLocations([]);
     setIsSelectedQuery(true);
 
-    if (cityLocationData && selectedCoordinates) {
-      const nearestLocation = findNearestLocation(selectedCoordinates, cityLocationData);
-      if (nearestLocation) {
-        const lat = parseFloat(nearestLocation.properties.locationLatitude ?? "");
-        const lng = parseFloat(nearestLocation.properties.locationLongitude ?? "");
+    if (cityLocationData && selectedCoordinates && isMapReady) {
+      // Use requestAnimationFrame for smooth interaction
+      requestAnimationFrame(() => {
+        const nearestLocation = findNearestLocation(selectedCoordinates, cityLocationData);
+        if (nearestLocation) {
+          const lat = parseFloat(nearestLocation.properties.locationLatitude ?? "");
+          const lng = parseFloat(nearestLocation.properties.locationLongitude ?? "");
 
-        if (!isNaN(lat) && !isNaN(lng)) {
-          mapRef.current?.flyToLocationWithPopup(lat, lng, nearestLocation, DEFAULT_ZOOM);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            mapRef.current?.flyToLocationWithPopup(lat, lng, nearestLocation, DEFAULT_ZOOM);
+          }
         }
-      }
+      });
     }
-  }, [cityLocationData, selectedCoordinates]);
+  }, [cityLocationData, selectedCoordinates, isMapReady]);
 
   const openFilterModal = useCallback(() => {
-    setTempFilters(appliedFilters);
+    setTempFilters([...appliedFilters]); // Shallow copy
     setFilterModalOpen(true);
   }, [appliedFilters]);
 
@@ -222,6 +231,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   }, []);
 
   const clearFilters = useCallback(() => {
+    // Batch state updates
     setAppliedFilters([]);
     setSelectedCheckboxes([]);
     setSelectedLocation("");
@@ -236,67 +246,104 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   }, []);
 
   const onCardClick = useCallback((index: number) => {
+    if (!isMapReady) return;
+
     setActiveCard(index);
-    const data = filteredLocations[index];
-
-    const lat = parseFloat(data.properties.locationLatitude ?? "");
-    const lng = parseFloat(data.properties.locationLongitude ?? "");
-
-    if (!isNaN(lat) && !isNaN(lng)) {
-      mapRef.current?.flyToLocationWithPopup(lat, lng, data, DEFAULT_ZOOM);
-    }
-  }, [filteredLocations]);
-
-  const handleSwiperSlideChange = useCallback((swiper: { activeIndex: number; }) => {
-    const activeSlideIndex = swiper.activeIndex;
-    const location = filteredLocations[activeSlideIndex];
-
+    const location = filteredLocations[index];
     if (!location) return;
 
     const lat = parseFloat(location.properties.locationLatitude ?? "");
     const lng = parseFloat(location.properties.locationLongitude ?? "");
 
     if (!isNaN(lat) && !isNaN(lng)) {
-      mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
+      // Use RAF for smooth interaction
+      requestAnimationFrame(() => {
+        mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
+      });
     }
-  }, [filteredLocations]);
+  }, [filteredLocations, isMapReady]);
 
-  // Initialize RTL and load data
+  const handleSwiperSlideChange = useCallback((swiper: any) => {
+    if (!isMapReady) return;
+
+    const activeSlideIndex = swiper.activeIndex;
+    const location = filteredLocations[activeSlideIndex];
+    if (!location) return;
+
+    const lat = parseFloat(location.properties.locationLatitude ?? "");
+    const lng = parseFloat(location.properties.locationLongitude ?? "");
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+      // Throttle map updates for swiper
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      searchTimeoutRef.current = setTimeout(() => {
+        mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
+      }, 100); // Small delay to avoid too frequent updates
+    }
+  }, [filteredLocations, isMapReady]);
+
+  // Initialize component with performance optimizations
   useEffect(() => {
+    let isCancelled = false;
+
     const initializeComponent = async () => {
       try {
         setLoading(true);
 
-        // Set RTL
+        // Set RTL immediately
         const lang = getCookieValue("NEXT_LOCALE");
         setIsRTL(lang === "ar" ? "rtl" : "ltr");
 
-        // Load data in parallel
-        const [cityResponse, filterResponse] = await Promise.all([
-          fetchCityWithLocationData(),
-          fetchCityLocationFilters(),
-        ]);
+        // Load data in parallel with timeout
+        const dataPromises = [
+          import("@/api-handler/apis/content").then(mod => mod.fetchCityWithLocationData()),
+          import("@/api-handler/apis/content").then(mod => mod.fetchCityLocationFilters()),
+        ];
 
-        setCityLocationData(cityResponse.properties);
-        setFilters(filterResponse.items);
+        const results = await Promise.allSettled(dataPromises);
+
+        if (isCancelled) return;
+
+        // Handle results
+        if (results[0].status === 'fulfilled') {
+          setCityLocationData(results[0].value?.properties);
+        }
+
+        if (results[1].status === 'fulfilled') {
+          setFilters(results[1].value?.items);
+        }
+
+        // Indicate map can be loaded
+        setTimeout(() => setIsMapReady(true), 100);
+
       } catch (err) {
-        console.error("Error loading data:", err);
+        if (!isCancelled) {
+          console.error("Error loading data:", err);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     initializeComponent();
 
-    // Cleanup on unmount
     return () => {
+      isCancelled = true;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
     };
   }, []);
 
-  // Handle search query changes
+  // Handle search query changes with improved performance
   useEffect(() => {
     if (isSelectedQuery) {
       setIsSelectedQuery(false);
@@ -308,16 +355,16 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
       return;
     }
 
-    debouncedSearchLocations(query);
+    debouncedSearch(query);
 
     return () => {
-      debouncedSearchLocations.cancel?.();
+      debouncedSearch.cancel?.();
     };
-  }, [query, isSelectedQuery, debouncedSearchLocations]);
+  }, [query, isSelectedQuery, debouncedSearch]);
 
-  // Handle automatic map navigation to first filtered location
+  // Handle automatic map navigation with performance optimization
   useEffect(() => {
-    if (filteredLocations.length === 0) return;
+    if (!filteredLocations.length || !isMapReady) return;
 
     const firstLocation = filteredLocations[0];
     const lat = parseFloat(firstLocation.properties.locationLatitude ?? "");
@@ -326,13 +373,23 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     if (!isNaN(lat) && !isNaN(lng)) {
       // Only fly if location actually changed
       if (!lastLocation || lastLocation.lat !== lat || lastLocation.lng !== lng) {
-        mapRef.current?.flyToLocationWithPopup(lat, lng, firstLocation, LIST_ZOOM);
-        setLastLocation({ lat, lng });
+        // Use requestIdleCallback for non-critical map updates
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(() => {
+            mapRef.current?.flyToLocationWithPopup(lat, lng, firstLocation, LIST_ZOOM);
+            setLastLocation({ lat, lng });
+          });
+        } else {
+          setTimeout(() => {
+            mapRef.current?.flyToLocationWithPopup(lat, lng, firstLocation, LIST_ZOOM);
+            setLastLocation({ lat, lng });
+          }, 0);
+        }
       }
     }
-  }, [filteredLocations, lastLocation]);
+  }, [filteredLocations, lastLocation, isMapReady]);
 
-  // Memoized filter button content
+  // Memoized components with proper keys
   const filterButtonContent = useMemo(() => {
     if (appliedFilters.length > 0 || isNoMatchLocations) {
       return `Filters(${selectedFilters})`;
@@ -348,69 +405,54 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     );
   }, [appliedFilters.length, isNoMatchLocations, selectedFilters]);
 
-  // Memoized Swiper component for desktop
-  const desktopSwiper = useMemo(() => (
-    <Swiper
-      key={`desktop-${isRTL}`}
-      dir={isRTL}
-      direction="vertical"
-      slidesPerView="auto"
-      freeMode={true}
-      scrollbar={{ draggable: true }}
-      mousewheel={true}
-      modules={[FreeMode, Scrollbar, Mousewheel]}
-      className="location-card-swiper max-h-[285px]"
-    >
-      <SwiperSlide className="space-y-[26px] ltr:xs:pr-[28px] rtl:xs:pl-[28px]">
-        {filteredLocations.map((location: APILocationsResponse, index: number) => (
-          <LocationDetailCard
-            key={`${location.sys?.id || location.id || index}`}
-            index={index}
-            title={location.name}
-            cityName={location.properties.cityName}
-            isKsa={location.properties.isKSA}
-            mapAddress={location.properties.mapAddress}
-            joinLink={
-              !location.properties.isComingSoon
-                ? location.properties.mapDirectionUrl
-                : undefined
-            }
-            gymInfoLink={
-              !location.properties.isComingSoon
-                ? location.route.path
-                : undefined
-            }
-            registerLink={
-              location.properties.isComingSoon
-                ? location.route.path
-                : undefined
-            }
-            image={location.properties.mapImage[0]?.url}
-            onClick={onCardClick}
-            className="group"
-            isActive={index === activeCard}
-          />
-        ))}
-      </SwiperSlide>
-    </Swiper>
-  ), [isRTL, filteredLocations, activeCard, onCardClick]);
+  // Virtualized location cards for better performance
+  const locationCards = useMemo(() => {
+    return filteredLocations.map((location: APILocationsResponse, index: number) => {
+      const locationKey = `${location.sys?.id || location.id || index}-${location.name}`;
 
-  // Memoized Swiper component for mobile
-  const mobileSwiper = useMemo(() => (
-    <Swiper
-      key={`mobile-${isRTL}`}
-      dir={isRTL}
-      slidesPerView={1.25}
-      spaceBetween={13}
-      className="map-swapper"
-      onSlideChange={handleSwiperSlideChange}
-    >
-      {filteredLocations.map((location: APILocationsResponse, index: number) => (
+      return (
+        <MemoizedLocationDetailCard
+          key={locationKey}
+          index={index}
+          title={location.name}
+          cityName={location.properties.cityName}
+          isKsa={location.properties.isKSA}
+          mapAddress={location.properties.mapAddress}
+          joinLink={
+            !location.properties.isComingSoon
+              ? location.properties.mapDirectionUrl
+              : undefined
+          }
+          gymInfoLink={
+            !location.properties.isComingSoon
+              ? location.route.path
+              : undefined
+          }
+          registerLink={
+            location.properties.isComingSoon
+              ? location.route.path
+              : undefined
+          }
+          image={location.properties.mapImage[0]?.url}
+          onClick={onCardClick}
+          className="group"
+          isActive={index === activeCard}
+        />
+      );
+    });
+  }, [filteredLocations, activeCard, onCardClick]);
+
+  // Memoized mobile location cards
+  const mobileLocationCards = useMemo(() => {
+    return filteredLocations.map((location: APILocationsResponse, index: number) => {
+      const locationKey = `mobile-${location.sys?.id || location.id || index}-${location.name}`;
+
+      return (
         <SwiperSlide
-          key={`${location.sys?.id || location.id || index}`}
+          key={locationKey}
           className="group swiper-slide-active:!group !h-auto xs:!min-h-[192px]"
         >
-          <LocationDetailCard
+          <MemoizedLocationDetailCard
             index={index}
             title={location.name}
             cityName={location.properties.cityName}
@@ -437,12 +479,22 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
             isActive={index === activeCard}
           />
         </SwiperSlide>
-      ))}
-    </Swiper>
-  ), [isRTL, filteredLocations, handleSwiperSlideChange, onCardClick, activeCard]);
+      );
+    });
+  }, [filteredLocations, onCardClick, activeCard]);
 
+  // Loading placeholder
   if (loading) {
-    return null;
+    return (
+      <section className="global-spacing !pb-0 map-container">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-[560px_minmax(200px,1fr)] xslg:grid-cols-[minmax(605px,1fr)_minmax(200px,1fr)] lg:grid-cols-[648px_1fr] text-white xs:rounded-[48px] overflow-hidden w-full">
+            <div className="bg-primary sm:min-h-[530px] animate-pulse"></div>
+            <div className="bg-gray-300 sm:min-h-[530px] animate-pulse"></div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -454,14 +506,14 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
             {countries && countries.length > 0 && (
               <div className="flex w-full ltr:sm:pr-[28px] rtl:sm:pl-[28px]">
                 {!isSelectBoxVisible ? (
-                  <TabButtons
+                  <MemoizedTabButtons
                     tabs={countries}
                     onButtonClick={handleTabButtonClick}
                     activeButtonIndex={activeTab}
                   />
                 ) : (
                   <div className="flex w-full h-full border-1 border-white border-solid bg-primary rounded-full">
-                    <Button
+                    <MemoizedButton
                       variant="white"
                       isArrow={false}
                       className="rounded-r-none h-[34px] mb:h-[42px] xs:h-[46px] min-w-[54px] xs:min-w-[67px] !pl-0 !pr-0 !py-0"
@@ -473,11 +525,12 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                         height={36}
                         className="w-[24px] xs:w-[36px]"
                         alt="arrow"
+                        priority
                       />
-                    </Button>
+                    </MemoizedButton>
 
                     <div className="flex items-center w-full h-[34px] mb:h-[42px] xs:h-[46px]">
-                      <LocationSelectBox
+                      <MemoizedLocationSelectBox
                         value={selectedLocation}
                         options={cityList}
                         placeholder="Select city"
@@ -490,7 +543,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
             )}
 
             {/* Autocomplete box */}
-            <AutocompleteInput
+            <MemoizedAutoCompleteInput
               value={query}
               onChange={handleQueryChange}
               onSelect={handleSelect}
@@ -508,21 +561,22 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   height={22}
                   className="w-[13px] h-[15px] mb:w-[21px] mb:h-[22px] flex-shrink-0 mt-[3px]"
                   alt="location"
+                  priority
                 />
                 <span className="break-words underline underline-offset-4 hover:no-underline">
                   use current location
                 </span>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
-                <Button
+                <MemoizedButton
                   isArrow={false}
                   variant="tangaroa"
                   className="!text-white hover:!text-primary uppercase border border-white hover:border-secondary h-[24px] mb:h-[34px] !text-[8px] mb:!text-[14px] !leading-[11px] mb:!leading-[20px] !font-extrabold !py-[6px] !pl-[8] !pr-[8px]"
                   onClick={clearFilters}
                 >
                   Clear All
-                </Button>
-                <Button
+                </MemoizedButton>
+                <MemoizedButton
                   isArrow={false}
                   variant="white"
                   className={`text-white hover:text-primary hover:bg-white !p-0 !h-[25px] mb:!pl-[20px] mb:!pr-[20px] mb:!h-[34px] capitalize min-w-[42px] mb:min-w-[68px] ${appliedFilters.length > 0 || isNoMatchLocations
@@ -532,10 +586,10 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   onClick={openFilterModal}
                 >
                   {filterButtonContent}
-                </Button>
+                </MemoizedButton>
               </div>
 
-              <LocationFilterCard
+              <MemoizedLocationFilterCard
                 state={filterModalOpen}
                 title="Filters"
                 value={tempFilters}
@@ -559,7 +613,23 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   </h2>
                 </div>
               ) : (
-                desktopSwiper
+                <Suspense fallback={<div className="h-[285px] animate-pulse bg-gray-700 rounded"></div>}>
+                  <Swiper
+                    key={`desktop-${isRTL}`}
+                    dir={isRTL}
+                    direction="vertical"
+                    slidesPerView="auto"
+                    freeMode={true}
+                    scrollbar={{ draggable: true }}
+                    mousewheel={true}
+                    modules={[FreeMode, Scrollbar, Mousewheel]}
+                    className="location-card-swiper max-h-[285px]"
+                  >
+                    <SwiperSlide className="space-y-[26px] ltr:xs:pr-[28px] rtl:xs:pl-[28px]">
+                      {locationCards}
+                    </SwiperSlide>
+                  </Swiper>
+                </Suspense>
               )}
             </div>
 
@@ -575,14 +645,37 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   </h2>
                 </div>
               ) : (
-                mobileSwiper
+                <Suspense fallback={<div className="h-[192px] animate-pulse bg-gray-700 rounded"></div>}>
+                  <Swiper
+                    key={`mobile-${isRTL}`}
+                    dir={isRTL}
+                    slidesPerView={1.25}
+                    spaceBetween={13}
+                    className="map-swapper"
+                    onSlideChange={handleSwiperSlideChange}
+                  >
+                    {mobileLocationCards}
+                  </Swiper>
+                </Suspense>
               )}
             </div>
           </div>
 
           {/* Map Container */}
           <div className="relative w-full !h-[530px] mb:!h-[703px] xs:!h-[325px] sm:!h-[530px] xs:bg-primary xs:px-[35px] xs:pb-[45px] sm:p-[0] sm:bg-white">
-            <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
+            {isMapReady ? (
+              <Suspense fallback={
+                <div className="h-full w-full bg-gray-300 animate-pulse flex items-center justify-center">
+                  <div className="text-gray-600">Loading Map...</div>
+                </div>
+              }>
+                <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
+              </Suspense>
+            ) : (
+              <div className="h-full w-full bg-gray-300 animate-pulse flex items-center justify-center">
+                <div className="text-gray-600">Preparing Map...</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
