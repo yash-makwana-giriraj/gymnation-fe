@@ -26,10 +26,10 @@ const LargeTextComponent = dynamic(
   () => import("@/components/pannels/LargeTextComponent"),
   { ssr: true }
 );
-// const WelcomeBlock = dynamic(
-//   () => import("@/components/pannels/WelcomeBlock"),
-//   { ssr: true }
-// );
+const WelcomeBlock = dynamic(
+  () => import("@/components/pannels/WelcomeBlock"),
+  { ssr: true }
+);
 const Rewards = dynamic(() => import("@/components/sliders/Rewards"), {
   ssr: true,
 });
@@ -58,9 +58,9 @@ const ImageGalleryWithDescription = dynamic(
   { ssr: true }
 );
 
-// const LocationMap = dynamic(() => import("@/components/pannels/LocationMap"), {
-//   ssr: true,
-// });
+const LocationMap = dynamic(() => import("@/components/pannels/LocationMap"), {
+  ssr: true,
+});
 
 const informationSection = dynamic(() => import("@/components/pannels/Description"), {
   ssr: true,
@@ -76,7 +76,7 @@ const components: Record<string, ComponentType<DynamicComponentProps>> = {
   aboutUsHero,
   LocationCard,
   LargeTextComponent,
-  // WelcomeBlock,
+  WelcomeBlock,
   Rewards,
   FeaturedCard,
   dayPassForm,
@@ -85,7 +85,7 @@ const components: Record<string, ComponentType<DynamicComponentProps>> = {
   ScrollableClassesCard,
   ImageGalleryWithDescription,
   informationSection,
-  // LocationMap,
+  LocationMap,
   NewLocationMap
 };
 
