@@ -63,6 +63,7 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
     const currentPopupRef = useRef<any>(null);
+    const gymReviewMapRef = useRef<Map<string, GymReview>>(new Map());
 
     const [isMapLoaded, setIsMapLoaded] = useState(false);
     const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
@@ -390,14 +391,14 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
         }
 
         // Add event listeners if not already added
-        const handleClusterClick = (e) => {
+        const handleClusterClick = (e: any) => {
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['clusters'],
           });
           const clusterId = features[0].properties.cluster_id;
           map.getSource('locations').getClusterExpansionZoom(
             clusterId,
-            (err, zoom) => {
+            (err: any, zoom: any) => {
               if (err) return;
               map.easeTo({
                 center: features[0].geometry.coordinates,
@@ -407,7 +408,7 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
           );
         };
 
-        const handleUnclusteredClick = async (e) => {
+        const handleUnclusteredClick = async (e: any) => {
           e.preventDefault();
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['unclustered-point'],
@@ -441,7 +442,7 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
           map.on('moveend', handleMoveEnd);
         };
 
-        const handleUnclusteredMouseEnter = async (e) => {
+        const handleUnclusteredMouseEnter = async (e: any) => {
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['unclustered-point'],
           });
