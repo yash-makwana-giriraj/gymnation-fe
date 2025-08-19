@@ -51,9 +51,9 @@ export interface MapBoxRef {
 }
 
 // Pre-compile templates for better performance
-const STAR_SVG_FULL = '<svg class="inline !w-[19px] !h-[19px] fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09L5.822 12 1 7.91l6.061-.873L10 2l2.939 5.037 6.06.873-4.82 4.09 1.7 6.09z"/></svg>';
-const STAR_SVG_HALF = '<svg class="inline !w-[19px] !h-[19px] fill-current" viewBox="0 0 20 20"><defs><linearGradient id="half-grad"><stop offset="50%" stop-color="currentColor"/><stop offset="50%" stop-color="transparent"/></linearGradient></defs><path fill="url(#half-grad)" d="M10 15l-5.878 3.09L5.822 12 1 7.91l6.061-.873L10 2l2.939 5.037 6.06.873-4.82 4.09 1.7 6.09z"/></svg>';
-const STAR_SVG_EMPTY = '<svg class="inline !w-[19px] !h-[19px] text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09L5.822 12 1 7.91l6.061-.873L10 2l2.939 5.037 6.06.873-4.82 4.09 1.7 6.09z"/></svg>';
+const STAR_SVG_FULL = '<svg class="inline !w-[19px] !h-[19px] fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09L5.822 12 1 7.91l6.061-.873L10 2l2.939 5.037 6.06 .873-4.82 4.09 1.7 6.09z"/></svg>';
+const STAR_SVG_HALF = '<svg class="inline !w-[19px] !h-[19px] fill-current" viewBox="0 0 20 20"><defs><linearGradient id="half-grad"><stop offset="50%" stop-color="currentColor"/><stop offset="50%" stop-color="transparent"/></linearGradient></defs><path fill="url(#half-grad)" d="M10 15l-5.878 3.09L5.822 12 1 7.91l6.061-.873L10 2l2.939 5.037 6.06 .873-4.82 4.09 1.7 6.09z"/></svg>';
+const STAR_SVG_EMPTY = '<svg class="inline !w-[19px] !h-[19px] text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09L5.822 12 1 7.91l6.061-.873L10 2l2.939 5.037 6.06 .873-4.82 4.09 1.7 6.09z"/></svg>';
 
 // Cache for popup HTML to avoid regeneration
 const popupCache = new Map<string, string>();
@@ -63,12 +63,34 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
     const currentPopupRef = useRef<any>(null);
-    const markersRef = useRef<any[]>([]);
-    const gymReviewMapRef = useRef<Map<string, GymReview>>(new Map());
 
     const [isMapLoaded, setIsMapLoaded] = useState(false);
     const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
     const [isInitialized, setIsInitialized] = useState(false);
+
+    // Memoized location map and GeoJSON
+    const locationMap = useMemo(() => {
+      return new Map(apiLocations.map((loc) => [loc.sys?.id || loc.id || '', loc]));
+    }, [apiLocations]);
+
+    const geoJson = useMemo(() => ({
+      type: 'FeatureCollection' as const,
+      features: apiLocations.map((loc) => {
+        const lng = parseFloat(loc.properties.locationLongitude ?? '');
+        const lat = parseFloat(loc.properties.locationLatitude ?? '');
+        if (isNaN(lat) || isNaN(lng)) return null;
+        return {
+          type: 'Feature' as const,
+          properties: {
+            id: loc.sys?.id || loc.id || '',
+          },
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [lng, lat] as [number, number],
+          },
+        };
+      }).filter((feature): feature is NonNullable<typeof feature> => feature !== null),
+    }), [apiLocations]);
 
     // Lazy load gym reviews only when needed
     const loadGymReviews = useCallback(async () => {
@@ -115,8 +137,8 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
 
     const generateStarsOptimized = useCallback((ratingStr: string): string => {
       const rating = parseFloat(ratingStr);
-      const key = Math.round(rating * 10) / 10; // Round to nearest 0.1
-      return starsCache.get(key.toFixed(1)) || '';
+      const key = (Math.round(rating * 10) / 10).toFixed(1);
+      return starsCache.get(key) || '';
     }, [starsCache]);
 
     // Optimized popup generation with caching
@@ -150,7 +172,7 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
           <span class="inline-block align-start !h-[15px] text-secondary mr-[8px] mb-[5px] ml-1">
             ${generateStarsOptimized(rating)}
           </span>
-          <div class="text-[10px] text-primary mb-[5px]">${totalReview} reviews</div>
+          <div class="text-[10px] text-[10px] text-primary mb-[5px]">${totalReview} reviews</div>
         </div>
       ` : "";
 
@@ -194,7 +216,7 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
       setIsInitialized(true);
     }, [isInitialized]);
 
-    // Load mapbox and initialize map
+    // Initialize mapbox and map
     useEffect(() => {
       if (!isInitialized || mapRef.current || !mapContainerRef.current) return;
 
@@ -258,110 +280,209 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(
       };
     }, [isInitialized, isRTL, closeCurrentPopup]);
 
-    // Optimized marker creation with object pooling
+    // Update sources, layers, and events with clustering
     useEffect(() => {
-      if (!mapRef.current || !isMapLoaded || !apiLocations.length) return;
+      if (!mapRef.current || !isMapLoaded) return;
 
-      // Clear existing markers
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
+      const map = mapRef.current;
 
-      // Use requestIdleCallback for non-critical marker creation
-      const createMarkersWhenIdle = () => {
-        if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(() => createMarkers());
-        } else {
-          setTimeout(createMarkers, 0);
-        }
-      };
-
-      const createMarkers = async () => {
-        const mapboxgl = await loadMapbox();
-        const markers: any[] = [];
-
-        // Process markers in batches to avoid blocking
-        const batchSize = 10;
-        for (let i = 0; i < apiLocations.length; i += batchSize) {
-          const batch = apiLocations.slice(i, i + batchSize);
-
-          batch.forEach((location) => {
-            const lat = parseFloat(location.properties.locationLatitude ?? "");
-            const lng = parseFloat(location.properties.locationLongitude ?? "");
-
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            const el = document.createElement("div");
-            el.className = "marker cursor-pointer";
-            el.style.cssText = `
-              background-image: url(/icons/map-pin.svg);
-              width: 30px;
-              height: 50px;
-              background-size: 100%;
-              background-repeat: no-repeat;
-              padding: 0;
-            `;
-
-            const marker = new mapboxgl.Marker(el, { anchor: "bottom" })
-              .setLngLat([lng, lat])
-              .addTo(mapRef.current);
-
-            markers.push(marker);
-
-            const showPopup = async () => {
-              closeCurrentPopup();
-              const html = await getMapBoxData(location);
-              const popup = new mapboxgl.Popup({
-                offset: 50,
-                closeButton: true,
-                closeOnClick: false,
-              }).setHTML(html);
-
-              popup.setLngLat([lng, lat]);
-              popup.addTo(mapRef.current);
-              currentPopupRef.current = popup;
-            };
-
-            const flyAndShowPopup = async () => {
-              closeCurrentPopup();
-
-              mapRef.current.flyTo({
-                center: [lng, lat],
-                zoom: 15,
-                speed: 1.2,
+      const updateMapData = async () => {
+        // Load custom marker image if not loaded
+        if (!map.hasImage('custom-marker')) {
+          try {
+            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const image = new Image(30, 50); // Specify size to match original
+              image.crossOrigin = 'anonymous';
+              image.onload = () => resolve(image);
+              image.onerror = reject;
+              image.src = '/icons/map-pin.svg';
+            });
+            map.addImage('custom-marker', img);
+          } catch (err) {
+            console.error('Failed to load marker image', err);
+            // Fallback to circle layer
+            if (!map.getLayer('unclustered-point')) {
+              map.addLayer({
+                id: 'unclustered-point',
+                type: 'circle',
+                source: 'locations',
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                  'circle-color': '#11b4da',
+                  'circle-radius': 4,
+                  'circle-stroke-width': 1,
+                  'circle-stroke-color': '#fff'
+                }
               });
-
-              const handleMoveEnd = async () => {
-                const html = await getMapBoxData(location);
-                const popup = new mapboxgl.Popup({
-                  offset: 50,
-                  closeButton: true,
-                  closeOnClick: false,
-                }).setHTML(html);
-
-                popup.setLngLat([lng, lat]);
-                popup.addTo(mapRef.current);
-                currentPopupRef.current = popup;
-                mapRef.current.off("moveend", handleMoveEnd);
-              };
-
-              mapRef.current.on("moveend", handleMoveEnd);
-            };
-
-            el.addEventListener("mouseenter", showPopup, { passive: true });
-            el.addEventListener("click", flyAndShowPopup, { passive: true });
-          });
-
-          // Yield control between batches
-          if (i + batchSize < apiLocations.length) {
-            await new Promise(resolve => setTimeout(resolve, 0));
+            }
           }
         }
 
-        markersRef.current = markers;
+        // Update or add source
+        if (map.getSource('locations')) {
+          map.getSource('locations').setData(geoJson);
+        } else {
+          map.addSource('locations', {
+            type: 'geojson',
+            data: geoJson,
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50,
+          });
+        }
+
+        // Add layers if not present
+        if (!map.getLayer('clusters')) {
+          map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'locations',
+            filter: ['has', 'point_count'],
+            paint: {
+              'circle-color': [
+                'step',
+                ['get', 'point_count'],
+                '#51bbd6',
+                10,
+                '#f1f075',
+                30,
+                '#f28cb1',
+              ],
+              'circle-radius': [
+                'step',
+                ['get', 'point_count'],
+                20,
+                10,
+                30,
+                30,
+                40,
+              ],
+            },
+          });
+        }
+
+        if (!map.getLayer('cluster-count')) {
+          map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'locations',
+            filter: ['has', 'point_count'],
+            layout: {
+              'text-field': '{point_count_abbreviated}',
+              'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+              'text-size': 12,
+            },
+          });
+        }
+
+        if (!map.getLayer('unclustered-point')) {
+          map.addLayer({
+            id: 'unclustered-point',
+            type: 'symbol',
+            source: 'locations',
+            filter: ['!', ['has', 'point_count']],
+            layout: {
+              'icon-image': 'custom-marker',
+              'icon-size': 1, // Adjust if needed based on image dimensions
+              'icon-anchor': 'bottom',
+            },
+          });
+        }
+
+        // Add event listeners if not already added
+        const handleClusterClick = (e) => {
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: ['clusters'],
+          });
+          const clusterId = features[0].properties.cluster_id;
+          map.getSource('locations').getClusterExpansionZoom(
+            clusterId,
+            (err, zoom) => {
+              if (err) return;
+              map.easeTo({
+                center: features[0].geometry.coordinates,
+                zoom,
+              });
+            },
+          );
+        };
+
+        const handleUnclusteredClick = async (e) => {
+          e.preventDefault();
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: ['unclustered-point'],
+          });
+          if (!features.length) return;
+          const feature = features[0];
+          const id = feature.properties.id;
+          const location = locationMap.get(id);
+          if (!location) return;
+          const lng = feature.geometry.coordinates[0];
+          const lat = feature.geometry.coordinates[1];
+
+          closeCurrentPopup();
+
+          map.flyTo({
+            center: [lng, lat],
+            zoom: 15,
+            speed: 1.2,
+          });
+
+          const handleMoveEnd = async () => {
+            const html = await getMapBoxData(location);
+            const popup = new mapboxgl.Popup({
+              offset: 50,
+              closeButton: true,
+              closeOnClick: false,
+            }).setLngLat([lng, lat]).setHTML(html).addTo(map);
+            currentPopupRef.current = popup;
+            map.off('moveend', handleMoveEnd);
+          };
+          map.on('moveend', handleMoveEnd);
+        };
+
+        const handleUnclusteredMouseEnter = async (e) => {
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: ['unclustered-point'],
+          });
+          if (!features.length) return;
+          const feature = features[0];
+          const id = feature.properties.id;
+          const location = locationMap.get(id);
+          if (!location) return;
+          const coordinates = feature.geometry.coordinates.slice();
+
+          closeCurrentPopup();
+
+          const html = await getMapBoxData(location);
+          const popup = new mapboxgl.Popup({
+            offset: 50,
+            closeButton: true,
+            closeOnClick: false,
+          }).setLngLat(coordinates).setHTML(html).addTo(map);
+          currentPopupRef.current = popup;
+        };
+
+        map.on('click', 'clusters', handleClusterClick);
+        map.on('click', 'unclustered-point', handleUnclusteredClick);
+        map.on('mouseenter', 'unclustered-point', handleUnclusteredMouseEnter);
+
+        map.on('mouseenter', 'clusters', () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'clusters', () => {
+          map.getCanvas().style.cursor = '';
+        });
+        map.on('mouseenter', 'unclustered-point', () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'unclustered-point', () => {
+          map.getCanvas().style.cursor = '';
+        });
       };
 
-      createMarkersWhenIdle();
-    }, [apiLocations, isMapLoaded, getMapBoxData, closeCurrentPopup]);
+      updateMapData();
+    }, [apiLocations, isMapLoaded, geoJson, locationMap, getMapBoxData, closeCurrentPopup]);
 
     // Stable imperative methods
     useImperativeHandle(ref, () => ({

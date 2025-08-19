@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspens
 import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
 
 // Lazy load heavy components
+const MapBoxMap = lazy(() => import("../map/MapBoxMap"));
 const Swiper = lazy(() => import("swiper/react").then(mod => ({ default: mod.Swiper })));
 const SwiperSlide = lazy(() => import("swiper/react").then(mod => ({ default: mod.SwiperSlide })));
 
@@ -676,6 +677,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   <div className="text-gray-600">Loading Map...</div>
                 </div>
               }>
+                <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
               </Suspense>
             ) : (
               <div className="h-full w-full bg-gray-300 animate-pulse flex items-center justify-center">
