@@ -47,7 +47,7 @@ const MemoizedAutoCompleteInput = React.memo(AutocompleteInput);
 const MemoizedLocationFilterCard = React.memo(LocationFilterCard);
 const MemoizedLocationDetailCard = React.memo(LocationDetailCard);
 
-const LocationMap = ({ data }: { data: DynamicComponentData }) => {
+const LocationMap = ({ }: { data: DynamicComponentData }) => {
   // Core state
   const [loading, setLoading] = useState<boolean>(true);
   const [cityLocationData, setCityLocationData] = useState<Properties>();
