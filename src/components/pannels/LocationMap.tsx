@@ -26,7 +26,6 @@ import {
   ContentResponse,
   DynamicComponentData,
   FeaturesItem,
-  Item,
   Properties,
 } from "@/interfaces/content";
 
@@ -46,7 +45,7 @@ interface LocationCoordinates {
   lng: number;
 }
 
-const LocationMap = ({ data }: { data: DynamicComponentData }) => {
+const LocationMap = ({ }: { data: DynamicComponentData }) => {
   // Core data state
   const [loading, setLoading] = useState<boolean>(true);
   const [cityLocationData, setCityLocationData] = useState<Properties>();
@@ -248,7 +247,7 @@ const LocationMap = ({ data }: { data: DynamicComponentData }) => {
     }
   }, [filteredLocations]);
 
-  const handleSwiperSlideChange = useCallback((swiper: any) => {
+  const handleSwiperSlideChange = useCallback((swiper: { activeIndex: number; }) => {
     const activeSlideIndex = swiper.activeIndex;
     const location = filteredLocations[activeSlideIndex];
 
