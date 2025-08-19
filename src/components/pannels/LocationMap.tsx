@@ -1,11 +1,10 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } from "react";
-import { debounce, findNearestLocation } from "@/helpers/getCookie";
+import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
 
 // Lazy load heavy components
-const MapBoxMap = lazy(() => import("../map/MapBoxMap"));
-// const Swiper = lazy(() => import("swiper/react").then(mod => ({ default: mod.Swiper })));
-// const SwiperSlide = lazy(() => import("swiper/react").then(mod => ({ default: mod.SwiperSlide })));
+const Swiper = lazy(() => import("swiper/react").then(mod => ({ default: mod.Swiper })));
+const SwiperSlide = lazy(() => import("swiper/react").then(mod => ({ default: mod.SwiperSlide })));
 
 // Regular components (keep these as they're lighter)
 import TabButtons from "../ui/TabButtons";
@@ -14,7 +13,7 @@ import Image from "next/image";
 import LocationSelectBox from "../ui/LocationSelectBox";
 import AutocompleteInput from "../ui/AutocompleteInput";
 import LocationFilterCard from "../cards/LocationFilterCard";
-// import LocationDetailCard from "../cards/LocationDetailCard";
+import LocationDetailCard from "../cards/LocationDetailCard";
 import { MapBoxRef } from "../map/MapBoxMap";
 
 // Types
@@ -25,7 +24,7 @@ import {
   FeaturesItem,
   Properties,
 } from "@/interfaces/content";
-// import { FreeMode, Scrollbar, Mousewheel, Virtual } from "swiper/modules";
+import { FreeMode, Scrollbar, Mousewheel, Virtual } from "swiper/modules";
 
 // Constants
 const MAPBOX_API_BASE = "https://api.mapbox.com/geocoding/v5/mapbox.places";
@@ -45,7 +44,7 @@ const MemoizedButton = React.memo(Button);
 const MemoizedLocationSelectBox = React.memo(LocationSelectBox);
 const MemoizedAutoCompleteInput = React.memo(AutocompleteInput);
 const MemoizedLocationFilterCard = React.memo(LocationFilterCard);
-// const MemoizedLocationDetailCard = React.memo(LocationDetailCard);
+const MemoizedLocationDetailCard = React.memo(LocationDetailCard);
 
 const LocationMap = ({ }: { data: DynamicComponentData }) => {
   // Core state
@@ -57,7 +56,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   const [activeTab, setActiveTab] = useState<number | undefined>(undefined);
   const [isSelectBoxVisible, setSelectionBoxVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
-  // const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
+  const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
 
   // Search state
   const [query, setQuery] = useState<string>("");
@@ -74,7 +73,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   const [isNoMatchLocations, setIsNoMatchLocations] = useState<boolean>(false);
 
   // Map state
-  // const [activeCard, setActiveCard] = useState<number | null>(null);
+  const [activeCard, setActiveCard] = useState<number | null>(null);
   const [lastLocation, setLastLocation] = useState<LocationCoordinates | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
@@ -245,45 +244,45 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     setFilterModalOpen(false);
   }, []);
 
-  // const onCardClick = useCallback((index: number) => {
-  //   if (!isMapReady) return;
+  const onCardClick = useCallback((index: number) => {
+    if (!isMapReady) return;
 
-  //   setActiveCard(index);
-  //   const location = filteredLocations[index];
-  //   if (!location) return;
+    setActiveCard(index);
+    const location = filteredLocations[index];
+    if (!location) return;
 
-  //   const lat = parseFloat(location.properties.locationLatitude ?? "");
-  //   const lng = parseFloat(location.properties.locationLongitude ?? "");
+    const lat = parseFloat(location.properties.locationLatitude ?? "");
+    const lng = parseFloat(location.properties.locationLongitude ?? "");
 
-  //   if (!isNaN(lat) && !isNaN(lng)) {
-  //     // Use RAF for smooth interaction
-  //     requestAnimationFrame(() => {
-  //       mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
-  //     });
-  //   }
-  // }, [filteredLocations, isMapReady]);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      // Use RAF for smooth interaction
+      requestAnimationFrame(() => {
+        mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
+      });
+    }
+  }, [filteredLocations, isMapReady]);
 
-  // const handleSwiperSlideChange = useCallback((swiper: any) => {
-  //   if (!isMapReady) return;
+  const handleSwiperSlideChange = useCallback((swiper: any) => {
+    if (!isMapReady) return;
 
-  //   const activeSlideIndex = swiper.activeIndex;
-  //   const location = filteredLocations[activeSlideIndex];
-  //   if (!location) return;
+    const activeSlideIndex = swiper.activeIndex;
+    const location = filteredLocations[activeSlideIndex];
+    if (!location) return;
 
-  //   const lat = parseFloat(location.properties.locationLatitude ?? "");
-  //   const lng = parseFloat(location.properties.locationLongitude ?? "");
+    const lat = parseFloat(location.properties.locationLatitude ?? "");
+    const lng = parseFloat(location.properties.locationLongitude ?? "");
 
-  //   if (!isNaN(lat) && !isNaN(lng)) {
-  //     // Throttle map updates for swiper
-  //     if (searchTimeoutRef.current) {
-  //       clearTimeout(searchTimeoutRef.current);
-  //     }
+    if (!isNaN(lat) && !isNaN(lng)) {
+      // Throttle map updates for swiper
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
 
-  //     searchTimeoutRef.current = setTimeout(() => {
-  //       mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
-  //     }, 100); // Small delay to avoid too frequent updates
-  //   }
-  // }, [filteredLocations, isMapReady]);
+      searchTimeoutRef.current = setTimeout(() => {
+        mapRef.current?.flyToLocationWithPopup(lat, lng, location, DEFAULT_ZOOM);
+      }, 100); // Small delay to avoid too frequent updates
+    }
+  }, [filteredLocations, isMapReady]);
 
   // Initialize component with performance optimizations
   useEffect(() => {
@@ -294,8 +293,8 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
         setLoading(true);
 
         // Set RTL immediately
-        // const lang = getCookieValue("NEXT_LOCALE");
-        // setIsRTL(lang === "ar" ? "rtl" : "ltr");
+        const lang = getCookieValue("NEXT_LOCALE");
+        setIsRTL(lang === "ar" ? "rtl" : "ltr");
 
         // Load data in parallel with timeout
         const dataPromises = [
@@ -406,88 +405,88 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   }, [appliedFilters.length, isNoMatchLocations, selectedFilters]);
 
   // Memoized desktop location cards with virtual support
-  // const desktopLocationSlides = useMemo(() => {
-  //   return filteredLocations.map((location: APILocationsResponse, index: number) => {
-  //     const locationKey = `${location.sys?.id || location.id || index}-${location.name}`;
+  const desktopLocationSlides = useMemo(() => {
+    return filteredLocations.map((location: APILocationsResponse, index: number) => {
+      const locationKey = `${location.sys?.id || location.id || index}-${location.name}`;
 
-  //     return (
-  //       <SwiperSlide
-  //         key={locationKey}
-  //         virtualIndex={index}
-  //         className="ltr:xs:pr-[28px] rtl:xs:pl-[28px]"
-  //       >
-  //         <MemoizedLocationDetailCard
-  //           index={index}
-  //           title={location.name}
-  //           cityName={location.properties.cityName}
-  //           isKsa={location.properties.isKSA}
-  //           mapAddress={location.properties.mapAddress}
-  //           joinLink={
-  //             !location.properties.isComingSoon
-  //               ? location.properties.mapDirectionUrl
-  //               : undefined
-  //           }
-  //           gymInfoLink={
-  //             !location.properties.isComingSoon
-  //               ? location.route.path
-  //               : undefined
-  //           }
-  //           registerLink={
-  //             location.properties.isComingSoon
-  //               ? location.route.path
-  //               : undefined
-  //           }
-  //           image={location.properties.mapImage[0]?.url}
-  //           onClick={onCardClick}
-  //           className="group"
-  //           isActive={index === activeCard}
-  //         />
-  //       </SwiperSlide>
-  //     );
-  //   });
-  // }, [filteredLocations, activeCard, onCardClick]);
+      return (
+        <SwiperSlide
+          key={locationKey}
+          virtualIndex={index}
+          className="ltr:xs:pr-[28px] rtl:xs:pl-[28px]"
+        >
+          <MemoizedLocationDetailCard
+            index={index}
+            title={location.name}
+            cityName={location.properties.cityName}
+            isKsa={location.properties.isKSA}
+            mapAddress={location.properties.mapAddress}
+            joinLink={
+              !location.properties.isComingSoon
+                ? location.properties.mapDirectionUrl
+                : undefined
+            }
+            gymInfoLink={
+              !location.properties.isComingSoon
+                ? location.route.path
+                : undefined
+            }
+            registerLink={
+              location.properties.isComingSoon
+                ? location.route.path
+                : undefined
+            }
+            image={location.properties.mapImage[0]?.url}
+            onClick={onCardClick}
+            className="group"
+            isActive={index === activeCard}
+          />
+        </SwiperSlide>
+      );
+    });
+  }, [filteredLocations, activeCard, onCardClick]);
 
   // Memoized mobile location cards
-  // const mobileLocationCards = useMemo(() => {
-  //   return filteredLocations.map((location: APILocationsResponse, index: number) => {
-  //     const locationKey = `mobile-${location.sys?.id || location.id || index}-${location.name}`;
+  const mobileLocationCards = useMemo(() => {
+    return filteredLocations.map((location: APILocationsResponse, index: number) => {
+      const locationKey = `mobile-${location.sys?.id || location.id || index}-${location.name}`;
 
-  //     return (
-  //       <SwiperSlide
-  //         key={locationKey}
-  //         virtualIndex={index}
-  //         className="group swiper-slide-active:!group !h-auto xs:!min-h-[192px]"
-  //       >
-  //         <MemoizedLocationDetailCard
-  //           index={index}
-  //           title={location.name}
-  //           cityName={location.properties.cityName}
-  //           isKsa={location.properties.isKSA}
-  //           mapAddress={location.properties.mapAddress}
-  //           joinLink={
-  //             !location.properties.isComingSoon
-  //               ? location.properties.mapDirectionUrl
-  //               : undefined
-  //           }
-  //           gymInfoLink={
-  //             !location.properties.isComingSoon
-  //               ? location.route.path
-  //               : undefined
-  //           }
-  //           registerLink={
-  //             location.properties.isComingSoon
-  //               ? location.route.path
-  //               : undefined
-  //           }
-  //           image={location.properties.mapImage[0]?.url}
-  //           onClick={onCardClick}
-  //           className="group-[.swiper-slide-active]:bg-secondary group-[.swiper-slide-active]:border-secondary flex flex-auto h-fit"
-  //           isActive={index === activeCard}
-  //         />
-  //       </SwiperSlide>
-  //     );
-  //   });
-  // }, [filteredLocations, onCardClick, activeCard]);
+      return (
+        <SwiperSlide
+          key={locationKey}
+          virtualIndex={index}
+          className="group swiper-slide-active:!group !h-auto xs:!min-h-[192px]"
+        >
+          <MemoizedLocationDetailCard
+            index={index}
+            title={location.name}
+            cityName={location.properties.cityName}
+            isKsa={location.properties.isKSA}
+            mapAddress={location.properties.mapAddress}
+            joinLink={
+              !location.properties.isComingSoon
+                ? location.properties.mapDirectionUrl
+                : undefined
+            }
+            gymInfoLink={
+              !location.properties.isComingSoon
+                ? location.route.path
+                : undefined
+            }
+            registerLink={
+              location.properties.isComingSoon
+                ? location.route.path
+                : undefined
+            }
+            image={location.properties.mapImage[0]?.url}
+            onClick={onCardClick}
+            className="group-[.swiper-slide-active]:bg-secondary group-[.swiper-slide-active]:border-secondary flex flex-auto h-fit"
+            isActive={index === activeCard}
+          />
+        </SwiperSlide>
+      );
+    });
+  }, [filteredLocations, onCardClick, activeCard]);
 
   // Loading placeholder
   if (loading) {
@@ -620,7 +619,21 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                 </div>
               ) : (
                 <Suspense fallback={<div className="h-[285px] animate-pulse bg-gray-700 rounded"></div>}>
-
+                  <Swiper
+                    key={`desktop-${isRTL}`}
+                    dir={isRTL}
+                    direction="vertical"
+                    slidesPerView="auto"
+                    freeMode={true}
+                    scrollbar={{ draggable: true }}
+                    mousewheel={true}
+                    modules={[FreeMode, Scrollbar, Mousewheel, Virtual]}
+                    className="location-card-swiper max-h-[285px]"
+                    virtual={{ enabled: true }}
+                    spaceBetween={26}
+                  >
+                    {desktopLocationSlides}
+                  </Swiper>
                 </Suspense>
               )}
             </div>
@@ -638,7 +651,18 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                 </div>
               ) : (
                 <Suspense fallback={<div className="h-[192px] animate-pulse bg-gray-700 rounded"></div>}>
-
+                  <Swiper
+                    key={`mobile-${isRTL}`}
+                    dir={isRTL}
+                    slidesPerView={1.25}
+                    spaceBetween={13}
+                    className="map-swapper"
+                    onSlideChange={handleSwiperSlideChange}
+                    modules={[Virtual]}
+                    virtual={{ enabled: true }}
+                  >
+                    {mobileLocationCards}
+                  </Swiper>
                 </Suspense>
               )}
             </div>
@@ -652,7 +676,6 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   <div className="text-gray-600">Loading Map...</div>
                 </div>
               }>
-                <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
               </Suspense>
             ) : (
               <div className="h-full w-full bg-gray-300 animate-pulse flex items-center justify-center">
