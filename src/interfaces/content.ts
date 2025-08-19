@@ -200,7 +200,6 @@ export interface ContentResponse {
   content: {
     properties: Properties;
   };
-  items: any;
 }
 
 export interface Properties {
@@ -719,7 +718,6 @@ export interface CardItems {
 export interface CityLocationFilterItems {
   items: ContentResponse[];
   total: number;
-  properties: any;
 }
 
 // SEO
