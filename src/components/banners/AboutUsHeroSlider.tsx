@@ -13,6 +13,7 @@ const AboutUsHeroSlider = ({ data }: { data: DynamicComponentData }) => {
         height={608}
         alt="Hero banner image"
         priority
+        fetchPriority="high"
         className="absolute object-cover h-full w-full z-[-1] top-0 left-0"
       />
       <div className="container !mx-auto lp:!max-w-[1372px]">

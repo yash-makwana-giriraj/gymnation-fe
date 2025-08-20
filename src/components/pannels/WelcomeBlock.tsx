@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Player from "@vimeo/player";
 import { DynamicComponentData } from "@/interfaces/content";
 
 const getVimeoId = (url: string) => {
@@ -9,8 +12,20 @@ const getVimeoId = (url: string) => {
 
 const WelcomeBlock = ({ data }: { data: DynamicComponentData }) => {
   const [isPlayerActive, setIsPlayerActive] = useState(false);
-  const [isIframeLoaded, setIsIframeLoaded] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const vimeoId = getVimeoId(data.videoUrl);
+
+  useEffect(() => {
+    if (isPlayerActive && iframeRef.current) {
+      const player = new Player(iframeRef.current);
+
+      player.on("play", () => {
+        setIsVideoReady(true);
+      });
+    }
+  }, [isPlayerActive]);
 
   if (!vimeoId) return null;
 
@@ -19,23 +34,23 @@ const WelcomeBlock = ({ data }: { data: DynamicComponentData }) => {
       <div className="container">
         <div
           className="relative overflow-hidden pt-[56.25%] sm:pt-[54.25%] lp:pt-[45.25%] max-w-[900px] lp:max-w-[950px] xlg:!max-w-[100%] xlg:pt-[56.25%] mt-0 mx-auto !w-full rounded-[24px]"
-          onClick={() => setIsPlayerActive(true)}
+          onClick={() => setIsPlayerActive(!isPlayerActive)}
         >
-          {/* Iframe (hidden until loaded) */}
+          {/* Vimeo Iframe */}
           {isPlayerActive && (
             <iframe
+              ref={iframeRef}
               src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1`}
               title="About Video Gallery"
               allow="autoplay; encrypted-media"
               allowFullScreen
-              onLoad={() => setIsIframeLoaded(true)}
               className="absolute top-0 left-0 w-full h-full rounded-[24px]"
               style={{ zIndex: 10 }}
-            ></iframe>
+            />
           )}
 
-          {/* Placeholder (shows until iframe is loaded) */}
-          {(!isPlayerActive || !isIframeLoaded) && (
+          {/* Placeholder visible until video starts */}
+          {!isVideoReady && (
             <>
               <Image
                 src="/images/welcome-block-placeholder.avif"
@@ -45,6 +60,30 @@ const WelcomeBlock = ({ data }: { data: DynamicComponentData }) => {
                 priority={false}
                 style={{ zIndex: 20 }}
               />
+              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-30 pointer-events-none">
+                <div className="relative pointer-events-auto">
+                  {/* Tooltip text on hover */}
+                  {showTooltip && (
+                    <div className="absolute left-[18%] bottom-full mb-2 px-3 py-1 bg-black text-white text-[12px] rounded shadow-md">
+                      {isPlayerActive ? "Pause" : "Play"}
+                    </div>
+                  )}
+
+                  <button
+                    aria-label={isPlayerActive ? "Pause video" : "Play video"}
+                    className="bg-[#000000cf] cursor-pointer flex items-center justify-center text-white text-[50px] rounded-[5px] py-[8px] px-[25px]"
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                  >
+                    <Image
+                      src={isPlayerActive ? "/images/pause.png" : "/images/play.png"}
+                      height={30}
+                      width={30}
+                      alt={isPlayerActive ? "Pause icon" : "Play icon"}
+                    />
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>
