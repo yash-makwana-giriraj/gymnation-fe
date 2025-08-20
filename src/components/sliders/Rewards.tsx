@@ -62,7 +62,7 @@ const Rewards = ({ data }: { data: DynamicComponentData }) => {
                     width={127}
                     src={card?.content?.properties?.image?.[0]?.url}
                     alt={`slide ${i}`}
-                    loading="eager"
+                    priority={i === 0} 
                     className="h-full w-full"
                   />
                 )}
