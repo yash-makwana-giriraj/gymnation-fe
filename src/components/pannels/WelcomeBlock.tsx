@@ -61,24 +61,24 @@ const WelcomeBlock = ({ data }: { data: DynamicComponentData }) => {
                 style={{ zIndex: 20 }}
               />
               <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-30 pointer-events-none">
-                <div className="relative pointer-events-auto">
+                <div className="relative w-fit justify-center pointer-events-auto">
                   {/* Tooltip text on hover */}
                   {showTooltip && (
-                    <div className="absolute left-[18%] bottom-full mb-2 px-3 py-1 bg-black text-white text-[12px] rounded shadow-md">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-3 py-2 bg-black text-white text-[12px] font-bold rounded-[4px] shadow-md">
                       {isPlayerActive ? "Pause" : "Play"}
                     </div>
                   )}
 
                   <button
                     aria-label={isPlayerActive ? "Pause video" : "Play video"}
-                    className="bg-[#000000cf] cursor-pointer flex items-center justify-center text-white text-[50px] rounded-[5px] py-[8px] px-[25px]"
+                    className="bg-black cursor-pointer flex items-center justify-center text-white text-[50px] rounded-[4px] py-[4px] px-[16px]"
                     onMouseEnter={() => setShowTooltip(true)}
                     onMouseLeave={() => setShowTooltip(false)}
                   >
                     <Image
                       src={isPlayerActive ? "/images/pause.png" : "/images/play.png"}
-                      height={30}
-                      width={30}
+                      height={24}
+                      width={24}
                       alt={isPlayerActive ? "Pause icon" : "Play icon"}
                     />
                   </button>
