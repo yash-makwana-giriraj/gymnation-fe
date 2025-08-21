@@ -184,10 +184,12 @@ const MapBoxMap = forwardRef<MapBoxRef, MapBoxProps>(({ apiLocations }, ref) => 
   }, [shouldRenderMap, isRTL]);
 
 useEffect(() => {
-  if (!mapRef.current || !apiLocations?.length) return;
-
-  // Only create markers if none exist yet
-  if (markersRef.current.length > 0) return;
+  const canInitMarkers =
+    mapRef.current &&
+    apiLocations?.length &&
+    gymReviewData.length &&
+    markersRef.current.length === 0;
+  if (!canInitMarkers) return;
 
   apiLocations.forEach((location) => {
     const lat = parseFloat(location.properties.locationLatitude ?? "");
@@ -244,6 +246,7 @@ useEffect(() => {
     markersRef.current.push(marker);
   });
 }, [apiLocations, gymReviewData, createPopup]);
+
 
 
   useImperativeHandle(ref, () => ({
