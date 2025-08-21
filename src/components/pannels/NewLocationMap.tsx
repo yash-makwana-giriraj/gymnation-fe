@@ -39,6 +39,7 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
 
     // Location Card
     const [activeCard, setActiveCard] = useState<undefined | number | null>(null);
+    const [isNoMatchLocations, setIsNoMatchLocations] = useState<boolean>(false);
 
     // Swiper
     const [isRTL, setIsRTL] = useState<"rtl" | "ltr">("ltr");
@@ -200,6 +201,7 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
         setSelectedLocation("");
         setSelectionBoxVisible(false);
         setActiveTab(undefined);
+        setIsNoMatchLocations(false);
     };
 
     // Handle submit filter
@@ -230,6 +232,10 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
         // Start with all locations
         let filtered = apiLocations;
 
+        if (isNoMatchLocations === true) {
+      return []; // No locations found state
+    }
+
         // Filter by city name if selected
         if (selectedLocation) {
             filtered = filtered.filter(
@@ -252,6 +258,19 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
 
     // Use filtered locations for rendering and map
     const filteredLocations = getFilteredLocations();
+    useEffect(() => {
+    if (filteredLocations.length === 0) return;
+
+    const firstLocation = filteredLocations[0];
+    const lat = parseFloat(firstLocation.properties.locationLatitude ?? "");
+    const lng = parseFloat(firstLocation.properties.locationLongitude ?? "");
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+        mapRef.current?.flyToLocationWithPopup(lat, lng, firstLocation, 10);
+        setActiveCard(0); // Optional: update active card to first
+    }
+}, [filteredLocations]);
+
 
     if (Loading) {
         return null;
@@ -331,13 +350,13 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
                                 <Button
                                     isArrow={false}
                                     variant="white"
-                                    className={`text-white hover:text-primary hover:bg-white !p-0 !h-[25px] mb:!pl-[20px] mb:!pr-[20px] mb:!h-[34px] capitalize min-w-[42px] mb:min-w-[68px] ${appliedFilters.length > 0
+                                    className={`text-white hover:text-primary hover:bg-white !p-0 !h-[25px] mb:!pl-[20px] mb:!pr-[20px] mb:!h-[34px] capitalize min-w-[42px] mb:min-w-[68px] ${appliedFilters.length > 0 || isNoMatchLocations
                                         ? "!text-primary !bg-secondary !text-[14px] !leading-[20px] !font-extrabold"
                                         : ""
                                         }`}
                                     onClick={openFilterModal}
                                 >
-                                    {appliedFilters.length > 0 ? (
+                                    {appliedFilters.length > 0 || isNoMatchLocations ?  (
                                         `Filters(${selectedFilters})`
                                     ) : (
                                         <Image
@@ -363,10 +382,18 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
                                 onClose={closeFilterModal}
                                 onSubmit={submitFilters}
                                 setSelectedFilters={setSelectedFilters}
+                                setIsNoMatchLocations={setIsNoMatchLocations}
                             />
                         </div>
                         {/* Location Card */}
                         <div className="hidden sm:block">
+                            {isNoMatchLocations ? (
+                <div>
+                  <h2 className="text-red text-center text-[16px] font-600 leading-[28px] mb-[22px] uppercase">
+                    No Location Found
+                  </h2>
+                </div>
+              ) : (
                             <Swiper
                                 key={isRTL}
                                 dir={isRTL}
@@ -411,6 +438,7 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
                                     ))}
                                 </SwiperSlide>
                             </Swiper>
+                             )}
                         </div>
                         <div className="hidden xs:block sm:hidden w-[calc(100%_+_35px)]">
                             <Swiper

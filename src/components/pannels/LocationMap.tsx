@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 // API Handlers
 import {
@@ -19,7 +19,8 @@ import LocationDetailCard from "../cards/LocationDetailCard";
 import MapBoxMap, { MapBoxRef } from "../map/MapBoxMap";
 
 // Helpers
-import { getCookieValue, debounce, findNearestLocation } from "@/helpers/getCookie";
+import { getCookieValue } from "@/helpers/getCookie";
+
 // Types and models
 import {
   APILocationsResponse,
@@ -34,12 +35,13 @@ import {
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Scrollbar, Mousewheel } from "swiper/modules";
 
-const LocationMap = ({ }: { data: DynamicComponentData }) => {
+const LocationMap = ({}: { data: DynamicComponentData }) => {
   // variables
-  const [loading, setLoading] = useState<boolean>(true);
+  // const [loading, setLoading] = useState<boolean>(true);
   const [cityLocationData, setCityLocationData] = useState<Properties>();
   const [cityLocationFilters, setFilters] = useState<ContentResponse[]>([]);
-  const [selectedFilters, setSelectedFilters] = useState<number>(0);
+  const [selectedFilters, setSelectedFilters] = useState<number>(0); // Set default to 0
+
   // Mapbox map
   const mapRef = useRef<MapBoxRef>(null);
 
@@ -51,7 +53,6 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
   // Autocomplete input
   const [query, setQuery] = useState<string>("");
   const [cityList, setCityList] = useState<Item[]>([]);
-  const [isSelectedQuery, setIsSelectedQuery] = useState(false);
 
   // Filter Modal
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -67,96 +68,62 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
 
   const [locations, setLocations] = useState<string[]>([]);
   const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
-  const [isNoMatchLocations, setIsNoMatchLocations] = useState<boolean>(false);
-  const [lastLocation, setLastLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-
-  const [selectedCordinates, setSelectedCordinates] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-
-  const searchLocations = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setLocations([]);
-      return;
-    }
-
-    try {
-      const url = new URL(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchQuery
-        )}.json`
-      );
-
-      const params = new URLSearchParams({
-        access_token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN!,
-        language: languageCode,
-        limit: "10",
-        country: "ae",
-        proximity: `25.276987,55.296249`,
-      });
-      url.search = params.toString();
-      const response = await fetch(url.toString());
-      const data = await response.json();
-
-      const placeNames = data.features.map(
-        (feature: FeaturesItem) => feature.place_name
-      );
-
-      const coordinates = data.features[0].geometry.coordinates
-      setSelectedCordinates({
-        lat: coordinates[1],
-        lng: coordinates[0],
-      });
-
-      setLocations(placeNames);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-      setLocations([]);
-    }
-  }, []);
-
-  const debouncedSearchLocations = useMemo(() => {
-    return debounce((searchQuery: string) => {
-      searchLocations(searchQuery);
-    }, 500);
-  }, [searchLocations]);
 
   useEffect(() => {
-    if (isSelectedQuery) {
-      setIsSelectedQuery(false);
-      return;
-    }
+    if (!query.trim()) return; // Skip if query is empty
 
-    if (!query.trim()) {
-      setLocations([]);
-      return;
-    }
+    const fetchLocations = async () => {
+      // setLoading(true);
 
-    debouncedSearchLocations(query);
+      try {
+        const url = new URL(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+            query
+          )}.json`
+        );
+        const params = new URLSearchParams({
+          access_token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN!,
+          language: languageCode,
+          limit: "10",
+          country: "ae",
+          proximity: `25.276987,55.296249`,
+        });
+        url.search = params.toString();
 
-    return () => {
-      debouncedSearchLocations.cancel();
+        const response = await fetch(url.toString());
+        const data = await response.json();
+
+        // Ensure locations are correctly set
+        const placeNames = data.features.map(
+          (feature: FeaturesItem) => feature.place_name
+        );
+        setLocations(placeNames); // Update location list
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+      } finally {
+        // setLoading(false);
+      }
     };
-  }, [query, isSelectedQuery, debouncedSearchLocations]);
 
-  // Initial data loading (unchanged)
+    fetchLocations();
+  }, [query]); // Only rerun on `query` change
+  // API call
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
+        // setLoading(true);
 
+        // Fetch city location data
         const cityResponse = await fetchCityWithLocationData();
         setCityLocationData(cityResponse.properties);
+
+        // Fetch filters
         const filterResponse = await fetchCityLocationFilters();
         setFilters(filterResponse.items);
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
@@ -175,6 +142,9 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     if (cityList) setCityList(cityList);
   }, [activeTab, countries]);
 
+  // Functions
+
+  // Tab button
   const handleTabButtonClick = (index: number) => {
     setActiveTab(index);
     setSelectionBoxVisible(true);
@@ -182,22 +152,11 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
 
   // Handle autoSelect
   const handleSelect = (selectedValue: string) => {
-    setQuery(selectedValue);
-    setLocations([]);
-    setIsSelectedQuery(true)
-    if (cityLocationData) {
-      const nearestLocation = findNearestLocation(selectedCordinates, cityLocationData);
-      if (nearestLocation) {
-        const lat = parseFloat(nearestLocation.properties.locationLatitude ?? "");
-        const lng = parseFloat(nearestLocation.properties.locationLongitude ?? "");
-
-        if (!isNaN(lat) && !isNaN(lng)) {
-          mapRef.current?.flyToLocationWithPopup(lat, lng, nearestLocation, 15);
-        }
-      }
-    }
+    setQuery(selectedValue); // Update query when item is selected
+    setLocations([]); // Optionally clear the location list after selection
   };
 
+  // Handle Filter modal
   const openFilterModal = () => {
     setTempFilters(appliedFilters);
     setFilterModalOpen(true);
@@ -229,23 +188,27 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
     setActiveCard(index);
     const data = filteredLocations[index];
 
+    // Extract coordinates from the data
     const lat = parseFloat(data.properties.locationLatitude ?? "");
     const lng = parseFloat(data.properties.locationLongitude ?? "");
 
+    // Check if coordinates are valid
     if (!isNaN(lat) && !isNaN(lng)) {
       mapRef.current?.flyToLocationWithPopup(lat, lng, data, 15);
     }
   };
+  const [isNoMatchLocations, setIsNoMatchLocations] = useState<boolean>(false);
 
   const getFilteredLocations = () => {
     if (!apiLocations) return [];
 
-    let filtered = apiLocations;
+    let filtered = apiLocations; // Start with all locations
 
     if (isNoMatchLocations === true) {
-      return [];
+      return []; // No locations found state
     }
 
+    // Filter by city name if selected
     if (selectedLocation) {
       filtered = filtered.filter(
         (location: APILocationsResponse) =>
@@ -254,6 +217,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
       );
     }
 
+    // Further filter by appliedFilters (IDs) if any
     if (appliedFilters.length > 0) {
       filtered = filtered.filter((location: APILocationsResponse) => {
         const locationId = location.sys?.id || location.id || "";
@@ -263,30 +227,30 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
 
     return filtered;
   };
+  
 
+  // Get filtered locations (this is where you are using getFilteredLocations)
   const filteredLocations = getFilteredLocations();
 
+  // Handle flying to location when filteredLocations change
   useEffect(() => {
     if (filteredLocations.length > 0) {
       const firstLocation = filteredLocations[0];
       const lat = parseFloat(firstLocation.properties.locationLatitude ?? "");
       const lng = parseFloat(firstLocation.properties.locationLongitude ?? "");
 
+      // Ensure coordinates are valid and fly to the location
       if (!isNaN(lat) && !isNaN(lng)) {
-        if (lastLocation?.lat !== lat || lastLocation?.lng !== lng) {
-          mapRef.current?.flyToLocationWithPopup(lat, lng, firstLocation, 10);
-          setLastLocation({ lat, lng });
-        }
+        mapRef.current?.flyToLocationWithPopup(lat, lng, firstLocation, 10);
       }
     }
-  }, [filteredLocations, lastLocation]);
-
-  if (loading) {
-    return null;
-  }
+  }, [filteredLocations]); // Trigger this effect when filteredLocations changes
+  // if (loading) {
+  //   return null;
+  // }
 
   return (
-    <section className="global-spacing !pb-0 map-container">
+    <section className="global-spacing pb-0 map-container">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-[560px_minmax(200px,1fr)] xslg:grid-cols-[minmax(605px,1fr)_minmax(200px,1fr)] lg:grid-cols-[648px_1fr] text-white xs:rounded-[48px] overflow-hidden w-full">
           <div className="relative block pt-[30px] px-[15px] pb-[16px] mb:px-[12px] xs:py-[25px] xs:px-[35px] sm:p-[20px] sm:pt-[40px] slg:pl-[25px] lg:pl-[37px] bg-primary sm:min-h-[530px]">
@@ -329,7 +293,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
               </div>
             )}
 
-            {/* Autocomplete box with loading indicator */}
+            {/* Autocomplete box */}
             <AutocompleteInput
               value={query}
               onChange={setQuery}
@@ -341,6 +305,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
 
             {/* Location and Filters */}
             <div className="relative flex items-center justify-between w-full xs:mb-[22px] ltr:sm:pr-[28px] rtl:sm:pl-[28px] gap-2">
+              {/* Left: Icon + Text */}
               <div className="flex items-start gap-2 text-white text-[11px] leading-[18px] xxsmb:text-[10px] xxsmob:text-[12px] mb:text-[16px] mb:leading-[28px] font-semibold uppercase min-w-0 cursor-pointer">
                 <Image
                   src="/icons/noun-location-white.svg"
@@ -353,6 +318,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                   use current location
                 </span>
               </div>
+              {/* Right: Buttons */}
               <div className="flex items-center gap-4 flex-shrink-0">
                 <Button
                   isArrow={false}
@@ -365,10 +331,11 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                 <Button
                   isArrow={false}
                   variant="white"
-                  className={`text-white hover:text-primary hover:bg-white !p-0 !h-[25px] mb:!pl-[20px] mb:!pr-[20px] mb:!h-[34px] capitalize min-w-[42px] mb:min-w-[68px] ${appliedFilters.length > 0 || isNoMatchLocations
-                    ? "!text-primary !bg-secondary !text-[14px] !leading-[20px] !font-extrabold"
-                    : ""
-                    }`}
+                  className={`text-white hover:text-primary hover:bg-white !p-0 !h-[25px] mb:!pl-[20px] mb:!pr-[20px] mb:!h-[34px] capitalize min-w-[42px] mb:min-w-[68px] ${
+                    appliedFilters.length > 0 || isNoMatchLocations
+                      ? "!text-primary !bg-secondary !text-[14px] !leading-[20px] !font-extrabold"
+                      : ""
+                  }`}
                   onClick={openFilterModal}
                 >
                   {appliedFilters.length > 0 || isNoMatchLocations ? (
@@ -385,6 +352,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                 </Button>
               </div>
 
+              {/* Location selection Modal */}
               <LocationFilterCard
                 state={filterModalOpen}
                 title="Filters"
@@ -399,7 +367,6 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                 setSelectedFilters={setSelectedFilters}
               />
             </div>
-
             {/* Location Card */}
             <div className="hidden sm:block">
               {isNoMatchLocations ? (
@@ -457,9 +424,10 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
               )}
             </div>
             <div
-              className={`absolute top-[315%] mb:top-[345%] xs:top-0 block xs:relative sm:hidden w-[calc(100%_+_35px)] ${isNoMatchLocations &&
+              className={`absolute top-[325%] mb:top-[345%] xs:top-0 block xs:relative sm:hidden w-[calc(100%_+_35px)] ${
+                isNoMatchLocations &&
                 "z-2 top-[370%]  mb:top-[425%] xs:top-0 xs:relative"
-                }`}
+              }`}
             >
               {isNoMatchLocations ? (
                 <div className="w-full ">
@@ -501,7 +469,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                     (location: APILocationsResponse, index: number) => (
                       <SwiperSlide
                         key={index}
-                        className="group swiper-slide-active:!group !h-auto xs:!min-h-[192px]"
+                        className="group swiper-slide-active:!group !h-auto !max-h-[120px] mb:!max-h-[192px] xs:!min-h-[192px]"
                       >
                         <LocationDetailCard
                           index={index}
@@ -526,7 +494,7 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
                           }
                           image={location.properties.mapImage[0].url}
                           onClick={onCardClick}
-                          className="group-[.swiper-slide-active]:bg-secondary group-[.swiper-slide-active]:border-secondary flex flex-auto h-fit"
+                          className="group-[.swiper-slide-active]:bg-secondary group-[.swiper-slide-active]:border-secondary flex flex-auto h-full"
                           isActive={index === activeCard}
                         />
                       </SwiperSlide>
@@ -536,7 +504,8 @@ const LocationMap = ({ }: { data: DynamicComponentData }) => {
               )}
             </div>
           </div>
-          <div className="relative w-full !h-[530px] mb:!h-[703px] xs:!h-[325px] sm:!h-[530px] xs:bg-primary xs:px-[35px] xs:pb-[45px] sm:p-[0] sm:bg-white">
+
+          <div className="relative w-full !h-[530px] mb:!h-[703px] xs:!h-[325px] sm:!h-[530px]  xs:bg-primary xs:px-[35px] xs:pb-[45px] sm:p-[0] sm:bg-white">
             <MapBoxMap ref={mapRef} apiLocations={filteredLocations} />
           </div>
         </div>

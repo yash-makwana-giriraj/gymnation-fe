@@ -14,7 +14,7 @@ function LocationFilterCard({
   setSelectedFilters,
   setSelectedCheckboxes,
   setIsNoMatchLocations,
-  selectedCheckboxes,
+  selectedCheckboxes
 }: {
   state: boolean;
   title?: string;
@@ -25,35 +25,34 @@ function LocationFilterCard({
   onClear: () => void;
   onClose: () => void;
   onSubmit: (value: string[]) => void;
-  setIsNoMatchLocations?: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsNoMatchLocations: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedFilters: React.Dispatch<React.SetStateAction<number>>;
 }) {
 
-  // Reset checkboxes from parent state when popup opens
   useEffect(() => {
     if (state) {
-      setSelectedCheckboxes(value); // from value prop, not selectedCheckboxes (which is internal state)
+      setSelectedCheckboxes(selectedCheckboxes);
     }
-  }, [state, value, setSelectedCheckboxes]);
-
-  // Update filter count when checkboxes change
-  useEffect(() => {
-    setSelectedFilters(selectedCheckboxes.length);
-  }, [selectedCheckboxes, setSelectedFilters]);
+  }, [state, selectedCheckboxes, setSelectedCheckboxes]);
 
   const handleCheckboxChange = (val: string) => {
-    setSelectedCheckboxes((prev) =>
-      prev.includes(val)
+    setSelectedCheckboxes((prev) => {
+      const newSelection = prev.includes(val)
         ? prev.filter((v) => v !== val)
-        : [...prev, val]
-    );
+        : [...prev, val];
+      return newSelection;
+    });
   };
+
+  useEffect(() => {
+    setSelectedFilters(selectedCheckboxes.length);
+  }, [selectedCheckboxes, setSelectedFilters ,value]);
 
   const handleClear = () => {
     setSelectedCheckboxes([]);
     setSelectedFilters(0);
-    if (setIsNoMatchLocations) setIsNoMatchLocations(false);
-    onClear();
+    setIsNoMatchLocations(false);
+    onClear(); // Call the parent callback
   };
 
   const handleSubmit = () => {
@@ -61,13 +60,12 @@ function LocationFilterCard({
       onSubmit([]);
       return;
     }
+
     const locationGroups = selectedCheckboxes
       .map((id) => {
         const cat = list.find((c) => c.id === id);
         return (
-          cat?.properties?.catagoryLocations?.map(
-            (loc: APILocationsResponse) => loc.id
-          ) || []
+          cat?.properties?.catagoryLocations?.map((loc: APILocationsResponse) => loc.id) || []
         );
       })
       .filter((group) => group.length > 0);
@@ -82,9 +80,9 @@ function LocationFilterCard({
     );
 
     if (intersected.length === 0) {
-      setIsNoMatchLocations?.(true);
+      setIsNoMatchLocations(true);
     } else {
-      setIsNoMatchLocations?.(false);
+      setIsNoMatchLocations(false);
     }
 
     onSubmit(intersected);
@@ -92,9 +90,7 @@ function LocationFilterCard({
 
   return (
     <div
-      className={`absolute bg-white rounded-lg left-0 right-0 top-0 h-auto min-h-[260px] w-full sm:w-[calc(100%-28px)] z-12 pt-[5px] px-[20px] pb-[10px] mmob:pt-[8px] mmob:px-[10px] mmob:pb-[13px] xmb:px-[16px] text-primary font-semibold shadow-[0_0px_6px_rgba(2,42,58,0.5)] ${
-        state ? "block" : "hidden"
-      }`}
+      className={`absolute bg-white rounded-lg left-0 right-0 top-0 h-auto min-h-[260px] w-full sm:w-[calc(100%-28px)] z-12 pt-[5px] px-[20px] pb-[10px] mmob:pt-[8px] mmob:px-[10px] mmob:pb-[13px] xmb:px-[16px] text-primary font-semibold shadow-[0_0px_6px_rgba(2,42,58,0.5)] ${state ? "block" : "hidden"}`}
     >
       <div className="flex justify-between capitalize pb-[5px] mmob:pb-[8px] xmb:pb-[12px]">
         <p className="text-[15px] leading-[20px] xmb:text-[16px] xmb:leading-[24px]">
