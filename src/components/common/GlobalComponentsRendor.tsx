@@ -59,7 +59,7 @@ const ImageGalleryWithDescription = dynamic(
 );
 
 const LocationMap = dynamic(() => import("@/components/pannels/LocationMap"), {
-  ssr: true,
+  ssr: false,
 });
 
 const informationSection = dynamic(() => import("@/components/pannels/Description"), {
