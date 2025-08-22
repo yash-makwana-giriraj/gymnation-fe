@@ -9,13 +9,11 @@ import Image from 'next/image';
 import LocationSelectBox from '../ui/LocationSelectBox';
 import AutocompleteInput from '../ui/AutocompleteInput';
 import LocationFilterCard from '../cards/LocationFilterCard';
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Scrollbar, Mousewheel } from "swiper/modules";
 import LocationDetailCard from '../cards/LocationDetailCard';
 
 const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
-    const [Loading, setLoading] = useState<boolean>(true);
     const [cityLocationData, setCityLocationData] = useState<Properties>();
     const [cityLocationFilters, setFilters] = useState<ContentResponse[]>([]);
     const [selectedFilters, setSelectedFilters] = useState<number>(0);
@@ -121,7 +119,6 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                setLoading(true);
 
                 // Fetch city location data
                 const cityResponse = await fetchCityWithLocationData();
@@ -134,9 +131,7 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
                 setFilters(filterResponse.items);
             } catch (err) {
                 console.error("Error loading data:", err);
-            } finally {
-                setLoading(false);
-            }
+            } 
         };
 
         loadData();
@@ -270,11 +265,6 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
         setActiveCard(0); // Optional: update active card to first
     }
 }, [filteredLocations]);
-
-
-    if (Loading) {
-        return null;
-    }
 
     return (
         <section className="bg-primary global-spacing map-container !pt-32">
