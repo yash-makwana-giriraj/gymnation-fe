@@ -9,12 +9,12 @@ export async function generateMetadata({ params }: RendorProps) {
   const apiData = await fetchContent(formattedSlug);
 
   const seoConfig: SeoSitemapConfig = {
-    seoTitle: apiData?.properties?.seoTitle || "OQ8",
+    seoTitle: apiData?.properties?.seoTitle || "GYMNATION",
     seoDescription: apiData?.properties?.seoDescription || "DUQM Refinery",
     seoKeywords: apiData?.properties?.seoKeywords,
     canonicalUrl: apiData?.properties?.canonicalUrl,
     noIndex: apiData?.properties?.noIndex || false,
-    ogTitle: apiData?.properties?.ogTitle || "OQ8",
+    ogTitle: apiData?.properties?.ogTitle || "GYMNATION",
     ogDescription: apiData?.properties?.ogDescription || "DUQM Refinery",
     ogImage: apiData?.properties?.ogImage,
     hideInSitemap: apiData?.properties?.hideInSitemap,

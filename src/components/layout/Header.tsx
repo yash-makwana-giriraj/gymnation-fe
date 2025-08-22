@@ -123,7 +123,7 @@ const HeaderMain = ({ data }: { data: HeaderData }) => {
                 </Button>
               </div>
               <div>
-                <Link href={""} className="lang-btn !h-[30px] mmob:!h-[32px] mmob:mt-[6px]"></Link>
+                <Link href={""} className="lang-btn !h-[30px] mmob:!h-[32px] mmob:mt-[6px]" title="عربي"></Link>
               </div>
               <Button
                 isArrow={false} variant="tangaroa"
@@ -141,7 +141,7 @@ const HeaderMain = ({ data }: { data: HeaderData }) => {
                     src="/images/cross-dark.svg"
                     width={10}
                     height={10}
-                    alt="Toggle Menu"
+                    alt="Menu"
                     className="w-10 h-10 bg-white p-2 rounded-full"
                   />
                 </div>

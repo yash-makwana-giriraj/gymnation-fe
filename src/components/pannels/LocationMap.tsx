@@ -250,7 +250,7 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
   // }
 
   return (
-    <section className="global-spacing pb-0 map-container">
+    <section className="global-spacing !pb-0 map-container">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-[560px_minmax(200px,1fr)] xslg:grid-cols-[minmax(605px,1fr)_minmax(200px,1fr)] lg:grid-cols-[648px_1fr] text-white xs:rounded-[48px] overflow-hidden w-full">
           <div className="relative block pt-[30px] px-[15px] pb-[16px] mb:px-[12px] xs:py-[25px] xs:px-[35px] sm:p-[20px] sm:pt-[40px] slg:pl-[25px] lg:pl-[37px] bg-primary sm:min-h-[530px]">
