@@ -15,7 +15,6 @@ import { FreeMode, Scrollbar, Mousewheel } from "swiper/modules";
 import LocationDetailCard from '../cards/LocationDetailCard';
 
 const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
-    const [Loading, setLoading] = useState<boolean>(true);
     const [cityLocationData, setCityLocationData] = useState<Properties>();
     const [cityLocationFilters, setFilters] = useState<ContentResponse[]>([]);
     const [selectedFilters, setSelectedFilters] = useState<number>(0);
@@ -121,7 +120,6 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                setLoading(true);
 
                 // Fetch city location data
                 const cityResponse = await fetchCityWithLocationData();
@@ -134,8 +132,6 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
                 setFilters(filterResponse.items);
             } catch (err) {
                 console.error("Error loading data:", err);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -271,22 +267,6 @@ const NewLocationMap = ({ data }: { data: DynamicComponentData }) => {
     }
 }, [filteredLocations]);
 
-
-    if (Loading) {
-        return (
-      <section className="bg-primary global-spacing map-container !pt-32">
-        <div className="container mx-auto flex items-center justify-center min-h-[800px]">
-          <Image
-            src="/images/welcome-block-placeholder.avif"
-            alt="Loading locations map..."
-            width={1200}
-            height={800}
-            className="object-cover w-full h-auto rounded-lg"
-          />
-        </div>
-      </section>
-    );
-    }
 
     return (
         <section className="bg-primary global-spacing map-container !pt-32">
