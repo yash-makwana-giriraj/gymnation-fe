@@ -37,7 +37,6 @@ import { FreeMode, Scrollbar, Mousewheel } from "swiper/modules";
 
 const LocationMap = ({}: { data: DynamicComponentData }) => {
   // variables
-  // const [loading, setLoading] = useState<boolean>(true);
   const [cityLocationData, setCityLocationData] = useState<Properties>();
   const [cityLocationFilters, setFilters] = useState<ContentResponse[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<number>(0); // Set default to 0
@@ -73,8 +72,6 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
     if (!query.trim()) return; // Skip if query is empty
 
     const fetchLocations = async () => {
-      // setLoading(true);
-
       try {
         const url = new URL(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
@@ -111,8 +108,6 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // setLoading(true);
-
         // Fetch city location data
         const cityResponse = await fetchCityWithLocationData();
         setCityLocationData(cityResponse.properties);
@@ -122,8 +117,6 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
         setFilters(filterResponse.items);
       } catch (err) {
         console.error("Error loading data:", err);
-      } finally {
-        // setLoading(false);
       }
     };
 
@@ -141,8 +134,6 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
       countries?.[activeTab]?.content?.properties?.cityList?.items;
     if (cityList) setCityList(cityList);
   }, [activeTab, countries]);
-
-  // Functions
 
   // Tab button
   const handleTabButtonClick = (index: number) => {
@@ -227,7 +218,6 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
 
     return filtered;
   };
-  
 
   // Get filtered locations (this is where you are using getFilteredLocations)
   const filteredLocations = getFilteredLocations();
@@ -245,9 +235,6 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
       }
     }
   }, [filteredLocations]); // Trigger this effect when filteredLocations changes
-  // if (loading) {
-  //   return null;
-  // }
 
   return (
     <section className="global-spacing !pb-0 map-container">
@@ -388,11 +375,12 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
                   className="location-card-swiper max-h-[285px]"
                 >
                   <SwiperSlide className="space-y-[26px] ltr:xs:pr-[28px] rtl:xs:pl-[28px]">
-                    {filteredLocations.map(
+                   {filteredLocations.map(
                       (location: APILocationsResponse, index: number) => (
                         <LocationDetailCard
                           key={index}
                           index={index}
+                          isLocationComponent={true}
                           title={location.name}
                           cityName={location.properties.cityName}
                           isKsa={location.properties.isKSA}
@@ -412,7 +400,7 @@ const LocationMap = ({}: { data: DynamicComponentData }) => {
                               ? location.route.path
                               : undefined
                           }
-                          image={location.properties.mapImage[0].url}
+                          image={location?.properties?.mapImage?.[0]?.url}
                           onClick={onCardClick}
                           className="group"
                           isActive={index === activeCard}
